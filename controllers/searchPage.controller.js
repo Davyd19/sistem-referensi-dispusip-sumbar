@@ -123,7 +123,7 @@ module.exports = {
             // ============================
             const booksWithImages = booksData.rows.map(book => ({
                 ...book.get(),
-                image_full_path: book.image ? `/image/${book.image}` : null
+                image_full_path: book.image ? `/image/uploads/${book.image}` : null
             }));
 
             return res.render("user/index", {

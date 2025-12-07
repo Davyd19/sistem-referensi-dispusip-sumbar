@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white h-screen shadow-lg fixed">
+        <div class="p-6 border-b">
+            <h1 class="text-lg font-bold text-blue-600">Admin Panel</h1>
+        </div>
+
+        <nav class="mt-4">
+            <a href="/admin/books" class="block px-6 py-3 hover:bg-blue-50 <%= active === 'home' ? 'bg-blue-100 font-semibold' : '' %>">
+                📚 Daftar Buku
+            </a>
+
+            <a href="/admin/books/add" class="block px-6 py-3 hover:bg-blue-50 <%= active === 'add' ? 'bg-blue-100 font-semibold' : '' %>">
+                ➕ Tambah Buku
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 w-full p-8">

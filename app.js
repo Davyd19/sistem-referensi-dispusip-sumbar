@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const db = require('./models').sequelize;
 const bookRoutes = require('./routes/bookRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = 4000;
@@ -11,8 +12,10 @@ const PORT = 4000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(express.static('public'));
+
 // Middleware untuk file statis
-app.use(express.static(path.join(__dirname, 'public')));
+app.use("/image", express.static(path.join(__dirname, "public/image")));
 
 // Middleware parsing body request
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,6 +23,7 @@ app.use(bodyParser.json());
 
 // Routing Utama
 app.use('/', bookRoutes);
+app.use("/admin", adminRoutes);
 
 // --- PERBAIKAN UTAMA ADA DI SINI ---
 // Kita jalankan server (app.listen) HANYA SETELAH database selesai loading/sync

@@ -13,7 +13,6 @@
     body * {
         visibility: hidden;
     }
-
     #print-area, #print-area * {
         visibility: visible;
     }
@@ -23,5 +22,48 @@
         left: 0;
         top: 0;
         width: 100%;
+        padding: 0.5in !important; /* wajar */
+        margin: 0;
+        font-size: 12pt;
+    }
+
+    #print-area .grid {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 0.25in !important;
+    }
+
+    #print-area img {
+        max-width: 100%;
+        height: auto !important;
+        page-break-inside: avoid;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        page-break-inside: avoid;
+        margin: 0;
+    }
+
+    tr, td {
+        page-break-inside: avoid;
+        padding: 0.1in 0;
+    }
+
+    h2, h3, p {
+        margin: 0.1in 0;
+    }
+
+    /* Hapus semua margin/padding yang besar */
+    .p-4, .p-6, .mb-4, .mb-6, .space-y-8 {
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Hindari halaman kosong tambahan */
+    div, section {
+        page-break-after: auto;
     }
 }

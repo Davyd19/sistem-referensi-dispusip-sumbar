@@ -1,7 +1,23 @@
+const multer = require("multer");
 const path = require("path");
-const express = require("express");
+const fs = require("fs");
 
-module.exports = function (app) {
-    // Middleware untuk serve folder public/image
-    app.use("/image", express.static(path.join(__dirname, "../public/image")));
+module.exports = function () {
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            const uploadPath = path.join(__dirname, "../public/image/uploads");
+
+            // cek folder, kalau tidak ada buat
+            if (!fs.existsSync(uploadPath)) {
+                fs.mkdirSync(uploadPath, { recursive: true });
+            }
+
+            cb(null, uploadPath);
+        },
+        filename: function (req, file, cb) {
+            cb(null, Date.now() + path.extname(file.originalname));
+        }
+    });
+
+    return multer({ storage });
 };
