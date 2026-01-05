@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 
 module.exports = {
 async up(queryInterface, Sequelize) {
-    const passwordHash = bcrypt.hashSync('admin123', 10); // password default admin
+    const passwordHash = bcrypt.hashSync('admin123', 10); 
 
     await queryInterface.bulkInsert('Users', [
     {
