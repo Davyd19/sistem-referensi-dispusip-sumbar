@@ -19,26 +19,17 @@
                 <label class="font-medium">Judul</label>
                 <input type="text" name="title" required class="w-full p-2 border rounded">
             </div>
-            <div>
-                <label class="font-medium">Judul Asli</label>
-                <input type="text" name="original_title" class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="font-medium">Pernyataan Tanggung Jawab</label>
-                <input type="text" name="statement_of_responsibility" class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="font-medium">Series Title</label>
-                <input type="text" name="series_title" class="w-full p-2 border rounded">
-            </div>
+
             <div>
                 <label class="font-medium">Edisi</label>
                 <input type="text" name="edition" class="w-full p-2 border rounded">
             </div>
+
             <div>
                 <label class="font-medium">Tahun Terbit</label>
                 <input type="text" name="publish_year" maxlength="4" class="w-full p-2 border rounded">
             </div>
+
             <div>
                 <label class="font-medium">Tempat Terbit</label>
                 <input type="text" name="publish_place" class="w-full p-2 border rounded">
@@ -50,22 +41,12 @@
                 <label class="font-medium">Deskripsi Fisik</label>
                 <input type="text" name="physical_description" class="w-full p-2 border rounded">
             </div>
-            <div>
-                <label class="font-medium">Content Type</label>
-                <input type="text" name="content_type" class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="font-medium">Media Type</label>
-                <input type="text" name="media_type" class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="font-medium">Carrier Type</label>
-                <input type="text" name="carrier_type" class="w-full p-2 border rounded">
-            </div>
+
             <div>
                 <label class="font-medium">ISBN</label>
                 <input type="text" name="isbn" class="w-full p-2 border rounded">
             </div>
+
             <div>
                 <label class="font-medium">Call Number</label>
                 <input type="text" name="call_number" class="w-full p-2 border rounded">
@@ -80,14 +61,14 @@
     </div>
 
     <div>
-        <label class="font-medium">Catatan / Notes</label>
+        <label class="font-medium">Catatan</label>
         <textarea name="notes" rows="3" class="w-full p-2 border rounded"></textarea>
     </div>
 
     <!-- AUTHOR & PUBLISHER -->
     <div class="grid grid-cols-2 gap-6">
         <div>
-            <label class="font-medium">Penulis (Authors)</label>
+            <label class="font-medium">Penulis</label>
             <select name="authors[]" id="author-select" class="w-full p-2 border rounded" multiple>
                 <% authors.forEach(a => { %>
                     <option value="<%= a.id %>"><%= a.name %></option>
@@ -96,9 +77,8 @@
         </div>
 
         <div>
-            <label class="font-medium">Penerbit (Publisher)</label>
-            <select name="publisher_id" id="publisher-select" class="w-full p-2 border rounded">
-                <option value="">-- Pilih Penerbit --</option>
+            <label class="font-medium">Penerbit</label>
+            <select name="publishers[]" id="publisher-select" class="w-full p-2 border rounded" multiple>
                 <% publishers.forEach(p => { %>
                     <option value="<%= p.id %>"><%= p.name %></option>
                 <% }) %>
@@ -112,6 +92,7 @@
             <label class="font-medium">Kategori</label>
             <select name="category_id" id="category-select" class="w-full p-2 border rounded">
                 <option value="">-- Pilih Kategori --</option>
+
                 <% categories.forEach(c => { %>
                     <option value="<%= c.id %>"><%= c.name %></option>
                 <% }) %>
@@ -119,7 +100,7 @@
         </div>
 
         <div>
-            <label class="font-medium">Subjek (Subjects)</label>
+            <label class="font-medium">Subjek</label>
             <select name="subjects[]" id="subject-select" class="w-full p-2 border rounded" multiple>
                 <% subjects.forEach(s => { %>
                     <option value="<%= s.id %>"><%= s.name %></option>
@@ -136,23 +117,18 @@
         </div>
 
         <div>
-            <label class="font-medium">Work Type</label>
-            <input type="text" name="work_type" class="w-full p-2 border rounded">
+            <label class="font-medium">Lokasi Rak</label>
+            <input type="text" name="shelf_location" class="w-full p-2 border rounded">
         </div>
 
         <div>
-            <label class="font-medium">Target Audience</label>
-            <input type="text" name="target_audience" class="w-full p-2 border rounded">
-        </div>
-
-        <div>
-            <label class="font-medium">Lokasi Rak (Shelf Location)</label>
-            <input type="text" name="shelf_location" placeholder="Contoh: Rak A1" class="w-full p-2 border rounded">
+            <label class="font-medium">Total Stok</label>
+            <input type="number" name="stock_total" class="w-full p-2 border rounded">
         </div>
     </div>
 
     <!-- STOK DAN GAMBAR -->
-    <div class="grid grid-cols-2 gap-6">
+    <!-- <div class="grid grid-cols-2 gap-6">
         <div>
             <label class="font-medium">Total Stok</label>
             <input type="number" name="stock_total" class="w-full p-2 border rounded">
@@ -162,10 +138,10 @@
             <label class="font-medium">Stok Tersedia</label>
             <input type="number" name="stock_available" class="w-full p-2 border rounded">
         </div>
-    </div>
+    </div> -->
 
     <div>
-        <label class="font-medium">Upload Cover</label>
+        <label class="font-medium">Cover Buku</label>
         <input type="file" name="image" accept="image/*" class="w-full p-2 border rounded">
     </div>
 
@@ -201,7 +177,8 @@
     initTomSelect("#category-select", "Cari atau tambah kategori...");
     initTomSelect("#author-select", "Cari atau tambah penulis...");
     initTomSelect("#subject-select", "Cari atau tambah subjek...");
-    initTomSelect("#publisher-select", "Pilih atau tambah penerbit..."); // single select
+    initTomSelect("#publisher-select", "Pilih atau tambah penerbit...");
+
 </script>
 
 <%- include('partials/footer') %>

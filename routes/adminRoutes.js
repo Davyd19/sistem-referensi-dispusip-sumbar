@@ -4,6 +4,8 @@ const { isAdminLoggedIn } = require("../middleware/auth"); // CommonJS
 const adminBookController = require("../controllers/admin.controller");
 const upload = require("../middleware/imageMiddleware")();
 const { loginPage, loginAction, logoutAction } = require("../controllers/auth.controller"); // CommonJS
+const categoryController = require('../controllers/category.controller');
+const subjectController = require('../controllers/subject.controller');
 
 // =========================
 // LOGIN & LOGOUT (TIDAK PERLU SESSION)
@@ -59,5 +61,17 @@ router.get("/autocomplete/category", adminBookController.findCategory);
 router.get("/autocomplete/author", adminBookController.findAuthor);
 router.get("/autocomplete/publisher", adminBookController.findPublisher);
 router.get("/autocomplete/subject", adminBookController.findSubject);
+
+router.get('/categories', categoryController.getAllCategories);
+router.post('/categories/add', categoryController.addCategory);
+router.post('/categories/edit/:id', categoryController.updateCategory);
+router.get('/categories/delete/:id', categoryController.deleteCategory);
+
+router.get('/subjects', subjectController.getAllSubjects);
+router.post('/subjects/add', subjectController.addSubject);
+router.post('/subjects/edit/:id', subjectController.updateSubject);
+router.get('/subjects/delete/:id', subjectController.deleteSubject);
+
+
 
 module.exports = router;

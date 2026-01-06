@@ -8,8 +8,21 @@
 </head>
 <body class="bg-gray-100 flex">
 
+    <header class="fixed top-0 left-0 right-0 h-16 bg-white shadow z-40 flex items-center px-4">
+        <button id="toggleSidebar"
+            class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">
+            ☰
+        </button>
+
+        <h1 class="ml-4 text-xl font-semibold">
+            <%= title %>
+        </h1>
+    </header>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-white h-screen shadow-lg fixed flex flex-col justify-between">
+    <aside id="sidebar"
+        class="w-64 bg-white h-screen shadow-lg fixed flex flex-col justify-between
+                transform transition-transform duration-300 ease-in-out">
         <div>
             <div class="p-6 border-b">
                 <h1 class="text-lg font-bold text-blue-600">Admin Panel</h1>
@@ -23,6 +36,18 @@
                 <a href="/admin/books/add" class="block px-6 py-3 hover:bg-blue-50 <%= active === 'add' ? 'bg-blue-100 font-semibold' : '' %>">
                     ➕ Tambah Buku
                 </a>
+
+                <!-- <a href="/admin/categories"
+                    class="block px-6 py-3 hover:bg-blue-50 
+                    <%= active === 'categories' ? 'bg-blue-100 font-semibold' : '' %>">
+                    📂 Daftar Kategori
+                </a>
+
+                <a href="/admin/subjects"
+                    class="block px-6 py-3 hover:bg-blue-50 <%= active === 'subject' ? 'bg-blue-100 font-semibold' : '' %>">
+                    🏷️ Subjek
+                </a> -->
+
             </nav>
         </div>
 
@@ -36,4 +61,5 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="ml-64 w-full p-8">
+    <main id="mainContent"
+        class="ml-64 w-full p-8 transition-all duration-300">

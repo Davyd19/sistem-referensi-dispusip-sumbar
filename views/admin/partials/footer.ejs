@@ -1,3 +1,23 @@
     </main>
+    <script>
+        const sidebar = document.getElementById("sidebar");
+        const mainContent = document.getElementById("mainContent");
+        const toggleBtn = document.getElementById("toggleSidebar");
+
+        let isOpen = true;
+
+        toggleBtn.addEventListener("click", () => {
+            if (isOpen) {
+                sidebar.classList.add("-translate-x-full");
+                mainContent.classList.remove("ml-64");
+                mainContent.classList.add("ml-0");
+            } else {
+                sidebar.classList.remove("-translate-x-full");
+                mainContent.classList.remove("ml-0");
+                mainContent.classList.add("ml-64");
+            }
+            isOpen = !isOpen;
+        });
+    </script>
 </body>
 </html>
