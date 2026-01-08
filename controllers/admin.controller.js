@@ -7,7 +7,7 @@ module.exports = {
     try {
         const q = req.query.q || "";
         const page = parseInt(req.query.page) || 1; 
-        const limit = 10;
+        const limit = 100;
         const offset = (page - 1) * limit;
 
         const totalTitle = await Book.count();
@@ -260,19 +260,20 @@ module.exports = {
 
     deleteMultiple: async (req, res) => {
         try {
-            const { bookIds, confirmation, deleteAll } = req.body;
+            const { bookIds, excludeIds, confirmation, deleteAll } = req.body;
             
-            // 1. Logika HAPUS SEMUA
+            // 1. Logika HAPUS SELURUH DATABASE (Bisa dengan pengecualian)
             if (deleteAll === 'true') {
-                if (confirmation !== "HAPUS SEMUA") {
-                    return res.status(400).send("Konfirmasi salah untuk hapus seluruh data.");
-                }
-                // Hapus semua data di tabel Book
-                await Book.destroy({ where: {}, truncate: false }); // Gunakan truncate: true jika ingin reset ID jadi 1, tapi biasanya destroy saja cukup
+                const excluded = Array.isArray(excludeIds) ? excludeIds : (excludeIds ? [excludeIds] : []);
+                await Book.destroy({
+                    where: {
+                        id: { [Op.notIn]: excluded } // Hapus semua KECUALI yang ID-nya ada di list uncheck
+                    }
+                });
                 return res.redirect("/admin/books?deleteSuccess=all");
             }
 
-            // 2. Logika HAPUS YANG DIPILIH SAJA
+            // 2. Logika HAPUS YANG DICENTANG SAJA (Mode Normal)
             if (confirmation !== "HAPUS DATA") {
                 return res.status(400).send("Konfirmasi salah.");
             }
@@ -286,6 +287,7 @@ module.exports = {
 
             res.redirect("/admin/books?deleteSuccess=" + idsToDelete.length);
         } catch (err) {
+            console.error(err);
             res.status(500).send("Gagal menghapus data");
         }
     },
