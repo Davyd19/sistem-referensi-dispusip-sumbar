@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Admin Panel</title>
+    <!-- Menggunakan title jika ada, atau default -->
+    <title><%= typeof title !== 'undefined' ? title : 'Admin Panel' %></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex">
+
+    <% 
+        // Helper untuk mencegah error jika variabel 'active' tidak dikirim dari controller
+        // Kita gunakan 'active' jika ada, atau fallback mengecek 'title'
+        const safeActive = typeof active !== 'undefined' ? active : '';
+        const safeTitle = typeof title !== 'undefined' ? title : '';
+    %>
 
     <header class="fixed top-0 left-0 right-0 h-16 bg-white shadow z-40 flex items-center px-4">
         <button id="toggleSidebar"
@@ -15,7 +23,7 @@
         </button>
 
         <h1 class="ml-4 text-xl font-semibold">
-            <%= title %>
+            <%= safeTitle %>
         </h1>
     </header>
 
@@ -29,23 +37,35 @@
             </div>
 
             <nav class="mt-4">
-                <a href="/admin/books" class="block px-6 py-3 hover:bg-blue-50 <%= active === 'home' ? 'bg-blue-100 font-semibold' : '' %>">
+                <a href="/admin/books" class="block px-6 py-3 hover:bg-blue-50 <%= safeActive === 'home' || safeTitle === 'Daftar Buku' ? 'bg-blue-100 font-semibold' : '' %>">
                     📚 Daftar Buku
                 </a>
 
-                <a href="/admin/books/add" class="block px-6 py-3 hover:bg-blue-50 <%= active === 'add' ? 'bg-blue-100 font-semibold' : '' %>">
+                <a href="/admin/books/add" class="block px-6 py-3 hover:bg-blue-50 <%= safeActive === 'add' ? 'bg-blue-100 font-semibold' : '' %>">
                     ➕ Tambah Buku
                 </a>
 
                 <a href="/admin/categories"
                     class="block px-6 py-3 hover:bg-blue-50 
-                    <%= active === 'categories' ? 'bg-blue-100 font-semibold' : '' %>">
+                    <%= safeActive === 'categories' || safeTitle === 'Kelola Kategori' ? 'bg-blue-100 font-semibold' : '' %>">
                     📂 Daftar Kategori
                 </a>
 
                 <a href="/admin/subjects"
-                    class="block px-6 py-3 hover:bg-blue-50 <%= active === 'subject' ? 'bg-blue-100 font-semibold' : '' %>">
+                    class="block px-6 py-3 hover:bg-blue-50 <%= safeActive === 'subject' || safeTitle === 'Kelola Subjek' ? 'bg-blue-100 font-semibold' : '' %>">
                     🏷️ Subjek
+                </a>
+
+                <!-- MENU BARU: Penulis -->
+                <a href="/admin/authors"
+                    class="block px-6 py-3 hover:bg-blue-50 <%= safeActive === 'authors' || safeTitle === 'Kelola Penulis' ? 'bg-blue-100 font-semibold' : '' %>">
+                    ✍️ Penulis
+                </a>
+
+                <!-- MENU BARU: Penerbit -->
+                <a href="/admin/publishers"
+                    class="block px-6 py-3 hover:bg-blue-50 <%= safeActive === 'publishers' || safeTitle === 'Kelola Penerbit' ? 'bg-blue-100 font-semibold' : '' %>">
+                    🏢 Penerbit
                 </a>
 
             </nav>

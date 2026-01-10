@@ -2,10 +2,14 @@ const express = require("express");
 const router = express.Router();
 const { isAdminLoggedIn } = require("../middleware/auth");
 const adminBookController = require("../controllers/admin.controller");
-const upload = require("../middleware/imageMiddleware")();
+// Pastikan middleware imageMiddleware mengembalikan fungsi multer atau instance yang sesuai
+// Jika error "is not a function", ubah menjadi require("../middleware/imageMiddleware") tanpa ()
+const upload = require("../middleware/imageMiddleware")(); 
 const { loginPage, loginAction, logoutAction } = require("../controllers/auth.controller"); 
 const categoryController = require('../controllers/category.controller');
 const subjectController = require('../controllers/subject.controller');
+const authorController = require('../controllers/author.controller');
+const publisherController = require('../controllers/publisher.controller');
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const uploadExcel = multer({ storage: storage });
@@ -25,6 +29,7 @@ router.get("/logout", logoutAction);
 // =========================
 // SEMUA ROUTE ADMIN PERLU LOGIN
 // =========================
+// Middleware ini akan melindungi semua route di bawahnya
 router.use(isAdminLoggedIn);
 
 // =========================
@@ -68,6 +73,9 @@ router.get("/autocomplete/author", adminBookController.findAuthor);
 router.get("/autocomplete/publisher", adminBookController.findPublisher);
 router.get("/autocomplete/subject", adminBookController.findSubject);
 
+// =========================
+// KATEGORI & SUBJEK
+// =========================
 router.get('/categories', categoryController.getAllCategories);
 router.post('/categories/add', categoryController.addCategory);
 router.post('/categories/edit/:id', categoryController.updateCategory);
@@ -80,6 +88,21 @@ router.get('/subjects/delete/:id', subjectController.deleteSubject);
 
 router.post('/books/delete-multiple', adminBookController.deleteMultiple);
 
+// =========================
+// PENULIS (Authors)
+// =========================
+// 'requireAuth' dihapus karena sudah dicover oleh router.use(isAdminLoggedIn) di atas
+router.get('/authors', authorController.index);
+router.post('/authors', authorController.store);
+router.post('/authors/update/:id', authorController.update);
+router.post('/authors/delete/:id', authorController.destroy);
 
+// =========================
+// PENERBIT (Publishers)
+// =========================
+router.get('/publishers', publisherController.index);
+router.post('/publishers', publisherController.store);
+router.post('/publishers/update/:id', publisherController.update);
+router.post('/publishers/delete/:id', publisherController.destroy);
 
 module.exports = router;
