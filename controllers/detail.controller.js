@@ -30,7 +30,7 @@ module.exports = {
                     {
                         model: BookCopy,
                         as: 'copies',
-                        attributes: ['id', 'no_induk', 'status'], // sertakan status eksemplar
+                        attributes: ['id', 'no_induk', 'status'],
                         required: false
                     }
                 ]
@@ -59,15 +59,20 @@ module.exports = {
 
                 publisher: book.Publishers?.[0]?.name || "-",
                 author: book.Authors?.[0]?.name || "-",
+                // Untuk penulis tambahan jika ada lebih dari 1
+                additional_author: book.Authors?.length > 1 ? book.Authors.slice(1).map(a => a.name).join(', ') : null,
+                
                 subject: book.Subjects?.map(s => s.name).join(', ') || '-',
                 category: book.Category?.name || "-",
+                category_id: book.category_id, // Simpan ID kategori untuk logic related
 
-                // 🔥 INI YANG DIMINTA
                 total_books: totalBooks,
+                stock_total: book.stock_total,
+                stock_available: book.stock_available,
                 image: book.image || null
             };
 
-            // Siapkan data eksemplar untuk tabel ketersediaan
+            // Siapkan data eksemplar
             const copyRows = (book.copies || []).map(copy => ({
                 no_induk: copy.no_induk || '-',
                 title: book.title || '-',
@@ -82,34 +87,50 @@ module.exports = {
             try {
                 const host = req.get("x-forwarded-host") || req.get("host");
                 const protocol = req.get("x-forwarded-proto") || req.protocol;
-
                 const baseUrl = `${protocol}://${host}`;
                 const qrUrl = `${baseUrl}/book/${bookId}`;
-
                 qrImage = await QRCode.toDataURL(qrUrl);
             } catch (err) {
                 console.warn("QR Code gagal dibuat:", err);
             }
 
             // ================================
-            // 3. Ambil Karya Terkait
+            // 3. Ambil Karya Terkait (LOGIC BARU)
             // ================================
+            
+            // A. Ambil ID Subjek dari buku ini
+            const subjectIds = book.Subjects ? book.Subjects.map(s => s.id) : [];
+            let relatedBookIdsFromSubject = [];
+
+            // B. Cari ID buku lain yang punya subjek sama (jika ada subjectIds)
+            if (subjectIds.length > 0) {
+                const relatedSubjects = await BookSubject.findAll({
+                    where: {
+                        subject_id: { [Op.in]: subjectIds },
+                        book_id: { [Op.ne]: book.id } // Jangan ambil buku ini sendiri
+                    },
+                    attributes: ['book_id'],
+                    limit: 20 // Batasi pencarian awal
+                });
+                relatedBookIdsFromSubject = relatedSubjects.map(rs => rs.book_id);
+            }
+
+            // C. Query Utama Karya Terkait (Kategori ATAU Subjek)
             const relatedBooks = await Book.findAll({
                 where: {
-                    id: { [Op.ne]: book.id },
+                    id: { [Op.ne]: book.id }, // Pastikan bukan buku yang sedang dibuka
                     [Op.or]: [
-                        { title: { [Op.like]: `%${book.title.split(" ")[0]}%` } },
-                        { shelf_location: book.shelf_location },
-                        // Hindari error jika call_number null atau pendek
-                        ...(book.call_number
-                            ? [{ call_number: { [Op.like]: `${book.call_number.substring(0, 3)}%` } }]
-                            : [])
-                    ]
+                        // 1. Kesamaan Kategori
+                        { category_id: book.category_id },
+                        // 2. Kesamaan Subjek (Berdasarkan ID buku yang ditemukan tadi)
+                        relatedBookIdsFromSubject.length > 0 ? { id: { [Op.in]: relatedBookIdsFromSubject } } : undefined
+                    ].filter(Boolean) // Hapus undefined jika tidak ada subjek
                 },
                 include: [
-                    { model: Author, through: { attributes: [] }, required: false }
+                    { model: Author, as: 'Authors', required: false }
                 ],
-                limit: 10
+                limit: 10,
+                order: [['id', 'DESC']] // Tampilkan yang terbaru atau bisa diubah menjadi random
             });
 
             const relatedFormatted = relatedBooks.map(bk => ({

@@ -103,7 +103,7 @@ module.exports = {
                 include: includeOptions,
                 limit: parseInt(limit),
                 offset: parseInt(offset),
-                order: [["title", "ASC"]],
+                order: [["id", "DESC"]],
                 distinct: true
             });
 

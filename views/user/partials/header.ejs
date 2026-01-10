@@ -13,14 +13,23 @@
 
 <!-- Navbar -->
 <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm w-full">
-    <div class="w-full px-6">
-        <div class="flex items-center h-16 cursor-pointer" onclick="window.location='/'">
-            <img src="/image/assets/smarLIB.png" class="h-12 mr-3">
+    <div class="w-full px-6 h-16 flex justify-between items-center">
+        
+        <div class="flex items-center cursor-pointer group" onclick="window.location='/'">
+            <img src="/image/assets/smarLIB.png" class="h-12 mr-3 group-hover:opacity-90 transition">
             <div>
-                <h1 class="text-lg font-bold text-gray-900">SmartLIB</h1>
-                <p class="text-xs text-gray-500">Dispusip Prov. Sumbar</p>
+                <h1 class="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition">Sistem Layanan Referensi</h1>
+                <p class="text-xs text-gray-500">Dispusip Provinsi Sumatera Barat</p>
             </div>
         </div>
+
+        <div>
+            <a href="/admin/login" class="text-gray-500 hover:text-blue-600 text-sm font-medium flex items-center gap-2 px-3 py-2 rounded-md hover:bg-blue-50 transition duration-200">
+                <i class="fas fa-user-shield"></i>
+                <span class="hidden sm:inline">Login Admin</span>
+            </a>
+        </div>
+
     </div>
 </nav>
 

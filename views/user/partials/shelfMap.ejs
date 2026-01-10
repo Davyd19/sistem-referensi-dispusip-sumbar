@@ -25,14 +25,13 @@
                 { id: 'cab1', type: 'cabinet', label: '', x: 2, y: 3, w: 5, h: 4, color: 'bg-gray-300' },
                 { id: 'cab2', type: 'cabinet', label: '', x: 2, y: 8, w: 5, h: 4, color: 'bg-gray-300' },
                 
-                // Meja hijau toska vertikal (di bawah kabinet) - Diperpanjang
+                // Meja hijau toska vertikal (di bawah kabinet)
                 { id: 'desk_left_top', type: 'desk', label: '', x: 3, y: 16, w: 4, h: 12, color: 'bg-teal-400' },
 
-                // Meja Pustakawan (Hijau Toska) - Label dihapus, hanya warna
+                // Meja Pustakawan
                 { id: 'lib_desk', type: 'desk', label: '', x: 13, y: 8, w: 22, h: 7, color: 'bg-teal-400' },
 
                 // --- 2. SIDEBAR KIRI (MEJA PENGUNJUNG VERTIKAL) ---
-                // Width 5, Height diperpanjang menjadi 12. Jarak dari meja kiri atas diperbesar
                 { id: 'visit_v_1', type: 'desk', label: '', x: 2, y: 35, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
                 { id: 'visit_v_2', type: 'desk', label: '', x: 2, y: 50, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
                 { id: 'visit_v_3', type: 'desk', label: '', x: 2, y: 65, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
@@ -43,7 +42,6 @@
                 { id: 'visit_h_3', type: 'desk', label: '', x: 24, y: 85, w: 9, h: 7, color: 'bg-red-400' },
 
                 // --- 4. TENGAH RUANGAN ---
-                // Digeser ke kanan agar sejajar dengan rak A1 dan A2 (x: 45), diperbesar panjang dan lebarnya
                 { id: 'center_1', type: 'desk', label: '', x: 45, y: 40, w: 13, h: 12, color: 'bg-red-400' },
                 { id: 'center_2', type: 'desk', label: '', x: 59, y: 40, w: 13, h: 12, color: 'bg-red-400' },
                 { id: 'center_3', type: 'desk', label: '', x: 73, y: 40, w: 13, h: 12, color: 'bg-red-400' },
@@ -60,15 +58,12 @@
             const rackWidth = 4;
             const rackGap = 1.2;   
             
-            // A. RAK ATAS (8 Kolom: A1-H1) - Digabungkan
-            // Penamaan: A1, B1, C1, D1, E1, F1, G1, H1
+            // A. RAK ATAS (8 Kolom: A1-H1)
             const topLabels = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
-            
             for (let i = 0; i < 8; i++) {
                 const currentX = rackStartX + (i * (rackWidth + rackGap));
                 const label = topLabels[i];
                 
-                // Rak gabungan (lebih tinggi, menggabungkan R atas dan R bawah)
                 layoutData.push({ 
                     id: `rack_top_${i}`, type: 'rack', label: label, 
                     x: currentX, y: 5, w: rackWidth, h: 24, color: 'bg-gray-300', 
@@ -76,15 +71,13 @@
                 });
             }
 
-            // B. RAK BAWAH (8 Kolom: A2-H2) - Digabungkan dengan gap
-            // Penamaan: A2, B2, C2, D2, E2, F2, G2, H2
+            // B. RAK BAWAH (8 Kolom: A2-H2)
             const bottomLabels = ['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2'];
             
-            // 4 Rak gabungan pertama (A2, B2, C2, D2)
+            // 4 Rak gabungan pertama (A2-D2)
             for (let i = 0; i < 4; i++) {
                 const currentX = rackStartX + (i * (rackWidth + rackGap));
                 const label = bottomLabels[i];
-                
                 layoutData.push({ 
                     id: `rack_bot_${i}`, type: 'rack', label: label, 
                     x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
@@ -92,19 +85,18 @@
                 });
             }
 
-            // Rak E2 di area kosong (panjang 1/2)
-            const gapRackX = rackStartX + (4 * (rackWidth + rackGap)); // Posisi kolom ke-5, spacing sama dengan rak lain
+            // Rak E2 (gap)
+            const gapRackX = rackStartX + (4 * (rackWidth + rackGap));
             layoutData.push({ 
                 id: 'rack_gap', type: 'rack', label: 'E2', 
                 x: gapRackX, y: 77, w: rackWidth, h: 12, color: 'bg-gray-300', 
                 verticalText: true, rackId: 'E2'
             });
 
-            // 2 Rak gabungan setelah E2 (F2, G2) - Tanpa gap, sejajar langsung
+            // 2 Rak gabungan setelah E2 (F2, G2)
             for (let i = 0; i < 2; i++) {
-                const currentX = rackStartX + ((5 + i) * (rackWidth + rackGap)); // Tanpa gap offset
-                const label = bottomLabels[5 + i]; // F2, G2
-                
+                const currentX = rackStartX + ((5 + i) * (rackWidth + rackGap));
+                const label = bottomLabels[5 + i];
                 layoutData.push({ 
                     id: `rack_bot_${5 + i}`, type: 'rack', label: label, 
                     x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
@@ -112,7 +104,7 @@
                 });
             }
 
-            // C. RAK VERTIKAL POJOK KANAN (H2) - Digabungkan, digeser ke kiri
+            // C. RAK VERTIKAL POJOK KANAN (H2)
             layoutData.push({ 
                 id: 'rack_right_combined', type: 'rack', label: 'H2', 
                 x: 88, y: 55, w: 4, h: 24, color: 'bg-gray-300', 
@@ -120,18 +112,19 @@
             });
         %>
 
-        <!-- Container dengan aspect ratio 16:9 -->
         <div class="relative w-full aspect-[16/9] bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden">
             
-            <!-- Render semua elemen dari layoutData -->
             <% layoutData.forEach(item => { 
                 const isHighlighted = item.type === 'rack' && item.rackId && isBookRack(item.rackId, item.rackId2);
-                const finalColor = isHighlighted ? 'bg-blue-600' : item.color;
+                
+                // === LOGIKA HIGHLIGHT (BIRU) ===
+                // Jika aktif: Gunakan warna Biru (blue-600), shadow biru, border biru tua
+                const finalColor = isHighlighted ? 'bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.6)] z-10' : item.color;
                 const textColor = isHighlighted ? 'text-white' : (item.type === 'desk' ? 'text-white' : 'text-gray-700');
-                const borderColor = isHighlighted ? 'border-blue-700' : 'border-gray-500/30';
+                const borderColor = isHighlighted ? 'border-blue-800 border-2' : 'border-gray-500/30 border';
             %>
                 <div 
-                    class="absolute flex items-center justify-center border rounded-sm transition-transform hover:scale-105 cursor-default p-0 <%= finalColor %> <%= textColor %> <%= borderColor %>"
+                    class="absolute flex items-center justify-center rounded-sm transition-transform hover:scale-105 cursor-default p-0 <%= finalColor %> <%= textColor %> <%= borderColor %>"
                     style="
                         left: <%= item.x %>%;
                         top: <%= item.y %>%;
@@ -139,7 +132,6 @@
                         height: <%= item.h %>%;
                     "
                 >
-                    <!-- Hanya tampilkan label untuk rak -->
                     <% if (item.type === 'rack' && item.label) { %>
                         <span 
                             class="text-[7px] md:text-[8px] font-bold text-center leading-none tracking-tighter overflow-hidden w-full"
@@ -162,7 +154,6 @@
             
         </div>
         
-        <!-- Legenda -->
         <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div> 
@@ -181,9 +172,9 @@
                 <span>Meja Buku Tamu</span>
             </div>
             <% if (shelf) { %>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-blue-600 border border-blue-700"></div> 
-                    <span>Lokasi Buku (<strong><%= shelf %></strong>)</span>
+                <div class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200">
+                    <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div> 
+                    <span class="text-blue-800 font-bold">Lokasi Buku (<%= shelf %>)</span>
                 </div>
             <% } %>
         </div>

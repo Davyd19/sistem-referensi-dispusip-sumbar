@@ -128,8 +128,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-blue-50/20">
                             <% if (copies && copies.length > 0) { %>
-                                <% copies.forEach(copy => { %>
-                                    <tr>
+                                <% copies.forEach((copy, index )=> { %>
+                                    <tr class="<%= index >=5 ? 'hidden hidden-row' : '' %>">
                                         <td class="p-3 border-r text-blue-800 font-mono"><%= copy.no_induk %></td>
                                         <td class="p-3 border-r text-gray-800 font-medium leading-tight"><%= copy.title %></td>
                                         <td class="p-3 border-r text-gray-700">
@@ -166,14 +166,27 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="px-4 py-2 text-right text-xs text-gray-500 border-t border-gray-200">
+                <div class="px-4 py-2 text-right text-xs text-gray-500 border-t border-gray-200" id="copyInfoFooter">
                     <% if (copies && copies.length > 0) { %>
-                        Menampilkan <%= copies.length %> eksemplar
+                        <% if (copies.length > 5) { %>
+                            Menampilkan <span id="displayedCount">5</span> dari <span id="totalCount"><%= copies.length %></span> eksemplar
+                        <% } else { %>
+                            Menampilkan <%= copies.length %> dari <%= copies.length %> eksemplar
+                        <% } %>
                     <% } else { %>
                         Tidak ada data eksemplar
                     <% } %>
                 </div>
             </div>
+
+            <% if (copies && copies.length > 5) { %>
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center" id="showMoreContainer">
+                    <button id="showAllCopiesBtn" type="button" class="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline focus:outline-none flex items-center justify-center w-full">
+                        <span id="btnText">Tampilkan Seluruhnya (<%= copies.length %> Eksemplar)</span>
+                        <i id="btnIcon" class="fas fa-chevron-down ml-2"></i>
+                    </button>
+                </div>
+            <% } %>
 
             <!-- PANGGIL PARTIAL DENAH -->
             <%- include('partials/shelfMap', { shelfLocation: book.shelf_location }) %>
@@ -221,15 +234,15 @@
                         <% relatedBooks.forEach(rel => { %>
                             <div class="p-3 hover:bg-gray-50 text-sm group">
                                 <a href="/book/<%= rel.id %>" class="text-blue-700 group-hover:underline block mb-1 leading-tight font-medium"><%= rel.title %></a>
-                                <span class="text-gray-500 text-xs block"><%= rel.author %></span>
+                                <!-- <span class="text-gray-500 text-xs block"><%= rel.author %></span> -->
                             </div>
                         <% }) %>
                     <% } else { %>
                         <div class="p-4 text-xs text-gray-500 text-center italic">Tidak ada karya terkait.</div>
                     <% } %>
-                    <div class="p-2 bg-gray-50 text-right border-t border-gray-200">
+                    <!-- <div class="p-2 bg-gray-50 text-right border-t border-gray-200">
                         <a href="#" class="text-xs text-blue-600 hover:underline font-medium">Lihat lebih banyak..</a>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -352,5 +365,66 @@
     </div>
 
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('showAllCopiesBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const displayedCountSpan = document.getElementById('displayedCount');
+        const totalCountSpan = document.getElementById('totalCount');
+        
+        // Status awal: Tertutup (false)
+        let isExpanded = false; 
+
+        if (btn) {
+            btn.addEventListener('click', function() {
+                // Ambil semua baris yang memiliki class 'hidden-row'
+                const hiddenRows = document.querySelectorAll('.hidden-row');
+                
+                // Ubah status
+                isExpanded = !isExpanded;
+
+                if (isExpanded) {
+                    // === JIKA TOMBOL DIKLIK UNTUK MENAMPILKAN ===
+                    
+                    // 1. Tampilkan baris tersembunyi
+                    hiddenRows.forEach(row => {
+                        row.classList.remove('hidden');
+                    });
+
+                    // 2. Ubah Teks Tombol
+                    if(btnText) btnText.innerText = "Sembunyikan Kembali";
+                    if(btnIcon) btnIcon.className = "fas fa-chevron-up ml-2";
+
+                    // 3. Update info footer (Menampilkan X dari X)
+                    if (displayedCountSpan && totalCountSpan) {
+                        displayedCountSpan.innerText = totalCountSpan.innerText;
+                    }
+
+                } else {
+                    // === JIKA TOMBOL DIKLIK UNTUK MENYEMBUNYIKAN ===
+
+                    // 1. Sembunyikan kembali baris
+                    hiddenRows.forEach(row => {
+                        row.classList.add('hidden');
+                    });
+
+                    // 2. Ubah Teks Tombol ke Semula
+                    if (totalCountSpan && btnText) {
+                        btnText.innerText = "Tampilkan Seluruhnya (" + totalCountSpan.innerText + " Eksemplar)";
+                    } else if (btnText) {
+                        btnText.innerText = "Tampilkan Seluruhnya";
+                    }
+                    if(btnIcon) btnIcon.className = "fas fa-chevron-down ml-2";
+
+                    // 3. Update info footer kembali ke 5
+                    if (displayedCountSpan) {
+                        displayedCountSpan.innerText = "5";
+                    }
+                }
+            });
+        }
+    });
+</script>
 
 <%- include('partials/footer') %>
