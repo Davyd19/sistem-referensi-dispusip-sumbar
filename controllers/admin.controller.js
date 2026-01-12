@@ -473,6 +473,10 @@ module.exports = {
         try {
             const data = req.body;
 
+            if (!data.title || !data.category_id || !data.subjects || !data.shelf_location || !data.no_induk) {
+                return res.status(400).send("Gagal: Judul, Kategori, Subjek, Lokasi Rak, dan Nomor Induk wajib diisi!");
+            }
+
             // 1. Logika Kategori (Tetap sama)
             let categoryId = null;
             if (data.category_id) {
@@ -553,25 +557,18 @@ module.exports = {
             });
 
             if (data.no_induk) {
-                // Kita asumsikan input no_induk dikirim sebagai string (dipisah koma atau baris baru)
-                // Contoh input: "B001, B002, B003"
                 const noIndukRaw = data.no_induk;
-                
-                // Bersihkan input: pecah string menjadi array, hapus spasi kosong, buang nilai kosong
                 const noIndukArray = noIndukRaw.split(/[\n,]+/).map(item => item.trim()).filter(item => item !== "");
 
                 if (noIndukArray.length > 0) {
-                    // Siapkan data untuk bulkInsert
                     const copyData = noIndukArray.map(nomor => ({
                         book_id: book.id,
                         no_induk: nomor,
                         status: 'tersedia'
                     }));
 
-                    // Simpan semua nomor induk sekaligus
                     await BookCopy.bulkCreate(copyData);
                     
-                    // Update total stok di tabel Book secara otomatis berdasarkan jumlah nomor induk
                     await book.update({ stock_total: noIndukArray.length });
                 }
             }
@@ -637,6 +634,11 @@ module.exports = {
             if (!book) return res.status(404).send("Buku tidak ditemukan");
 
             const data = req.body;
+
+            if (!data.title || !data.category_id || !data.subjects || !data.shelf_location || !data.no_induk) {
+                return res.status(400).send("Gagal: Data wajib (Judul, Kategori, Subjek, Lokasi, Nomor Induk) tidak boleh kosong!");
+            }
+            
             const originQ = data.origin_q || "";
             const originPage = data.origin_page || "1";
             const originSearchBy = data.origin_searchBy || "title";

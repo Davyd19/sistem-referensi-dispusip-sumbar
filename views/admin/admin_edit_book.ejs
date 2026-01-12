@@ -23,7 +23,7 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
     <div class="space-y-4">
         <div>
-            <label class="font-medium">Judul</label>
+            <label class="font-medium">Judul <span class="text-red-500">*</span></label>
             <input type="text" name="title" value="<%= book.title %>" required class="w-full p-2 border rounded">
         </div>
 
@@ -100,8 +100,8 @@
 <!-- ================= KATEGORI & SUBJEK ================= -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
     <div>
-        <label class="font-medium">Kategori</label>
-        <select name="category_id" id="category-select" class="w-full p-2 border rounded">
+        <label class="font-medium">Kategori <span class="text-red-500">*</span></label>
+        <select name="category_id" id="category-select" class="w-full p-2 border rounded" required>
             <% categories.forEach(c => { %>
                 <option value="<%= c.id %>" <%= book.Category?.id === c.id ? 'selected' : '' %>>
                     <%= c.name %>
@@ -111,8 +111,8 @@
     </div>
 
     <div>
-        <label class="font-medium">Subjek</label>
-        <select name="subjects[]" id="subject-select" class="w-full p-2 border rounded" multiple>
+        <label class="font-medium">Subjek <span class="text-red-500">*</span></label>
+        <select name="subjects[]" id="subject-select" class="w-full p-2 border rounded" multiple required>
             <% subjects.forEach(s => { %>
                 <option value="<%= s.id %>" <%= book.Subjects.some(bs => bs.id === s.id) ? 'selected' : '' %>>
                     <%= s.name %>
@@ -132,10 +132,9 @@
 
 <!-- LOKASI RAK (POPUP MAP) -->
     <div>
-    <label class="font-medium mb-2 block">Lokasi Rak</label>
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <!-- Hidden input untuk menyimpan nilai shelf_location -->
-        <input type="hidden" name="shelf_location" id="shelf_location" value="<%= book.shelf_location || '' %>">
+    <<label class="font-medium mb-2 block">Lokasi Rak <span class="text-red-500">*</span></label>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <input type="hidden" name="shelf_location" id="shelf_location" value="<%= book.shelf_location || '' %>" required>
         <!-- Display nilai yang dipilih -->
         <div 
             id="shelf-location-display" 
@@ -202,11 +201,11 @@
 
 <!-- ================= NO INDUK (EKSEMPLAR FISIK) ================= -->
 <div class="mt-4">
-    <label class="font-medium text-blue-700">Nomor Induk Fisik Buku</label>
-
+    <label class="font-medium text-blue-700">Nomor Induk Fisik Buku <span class="text-red-500">*</span></label>
     <textarea 
         name="no_induk"
         rows="4"
+        required
         class="w-full p-2 border-2 border-blue-200 rounded focus:border-blue-500 outline-none"
     ><%= book.copies?.map(c => c.no_induk).join('\n') %></textarea>
 
@@ -755,6 +754,25 @@
     if (shelfLocationInput && shelfLocationInput.value) {
         updateShelfLocationDisplay(shelfLocationInput.value);
     }
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const shelf = document.getElementById('shelf_location').value;
+        const title = document.getElementsByName('title')[0].value;
+        const category = document.getElementById('category-select').value;
+        const subjects = document.getElementById('subject-select').value; // TomSelect values
+        const noInduk = document.getElementsByName('no_induk')[0].value;
+
+        if (!title || !category || !subjects || subjects.length === 0 || !shelf || !noInduk) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Data Belum Lengkap!',
+                text: 'Judul, Kategori, Subjek, Lokasi Rak, dan Nomor Induk wajib diisi.',
+                icon: 'warning',
+                confirmButtonColor: '#3b82f6'
+            });
+            return false;
+        }
+    });
 </script>
 
 <style>
