@@ -15,11 +15,13 @@ module.exports = {
                 limit = 12
             } = req.query;
 
-            const offset = (page - 1) * limit;
+            const currentPage = parseInt(page);
+            const perPage = parseInt(limit);
+            const offset = (currentPage - 1) * perPage;
 
-            // ============================
-            // MATCH TYPE HANDLER
-            // ============================
+            // =========================
+            // MATCH TYPE
+            // =========================
             let searchValue = q;
             let operator = Op.like;
 
@@ -37,9 +39,9 @@ module.exports = {
                     searchValue = `%${q}%`;
             }
 
-            // ============================
-            // QUERY INCLUDE
-            // ============================
+            // =========================
+            // INCLUDE (DEFAULT – TIDAK TERFILTER)
+            // =========================
             const includeOptions = [
                 { model: Author, through: { attributes: [] }, required: false },
                 { model: Publisher, through: { attributes: [] }, required: false },
@@ -47,96 +49,120 @@ module.exports = {
                 { model: Category, required: false }
             ];
 
-            // ============================
-            // WHERE CONDITION
-            // ============================
+            // =========================
+            // WHERE CONDITION (BOOK)
+            // =========================
             const whereCondition = {};
-            if (category) whereCondition.category_id = category;
-            if (subject) {
-                whereCondition['$Subjects.id$'] = subject; 
-            }
-            if (year) whereCondition.publish_year = year;
 
-            // ============================
+            if (category) {
+                whereCondition.category_id = category;
+            }
+
+            if (year) {
+                whereCondition.publish_year = year;
+            }
+
+            // =========================
+            // FILTER SUBJECT (AMAN)
+            // =========================
+            if (subject) {
+                includeOptions[2].required = true;
+                includeOptions[2].where = {
+                    id: subject
+                };
+            }
+
+            // =========================
             // SEARCH HANDLER
-            // ============================
+            // =========================
             if (q) {
                 switch (searchBy) {
                     case "title":
                         whereCondition.title = { [operator]: searchValue };
                         break;
+
                     case "call_number":
                         whereCondition.call_number = { [operator]: searchValue };
                         break;
+
                     case "author":
                         includeOptions[0].required = true;
                         includeOptions[0].where = { name: { [operator]: searchValue } };
                         break;
+
                     case "publisher":
                         includeOptions[1].required = true;
                         includeOptions[1].where = { name: { [operator]: searchValue } };
                         break;
+
                     case "subject":
                         includeOptions[2].required = true;
                         includeOptions[2].where = { name: { [operator]: searchValue } };
                         break;
+
                     case "all":
                         whereCondition[Op.or] = [
                             { title: { [operator]: searchValue } },
                             { call_number: { [operator]: searchValue } }
                         ];
-                        includeOptions.forEach((inc, i) => {
-                            if (i < 3) {
-                                inc.required = true;
-                                inc.where = { name: { [operator]: searchValue } };
-                            }
+
+                        includeOptions.slice(0, 3).forEach(inc => {
+                            inc.required = false;
                         });
                         break;
                 }
             }
 
-            // ============================
+            // =========================
             // QUERY BUKU
-            // ============================
-            const booksData = await Book.findAndCountAll({
+            // =========================
+            const { count, rows } = await Book.findAndCountAll({
                 where: whereCondition,
                 include: includeOptions,
-                limit: parseInt(limit),
-                offset: parseInt(offset),
+                limit: perPage,
+                offset,
                 order: [["id", "DESC"]],
                 distinct: true
             });
 
-            // ============================
-            // SIDEBAR DATA
-            // ============================
-            const categories = await Category.findAll({ order: [["name", "ASC"]] });
-            const subjects = await Subject.findAll({ order: [["name", "ASC"]] });
-            const years = await Book.findAll({
-                attributes: [
-                    [Book.sequelize.fn("DISTINCT", Book.sequelize.col("publish_year")), "publish_year"]
-                ],
-                order: [["publish_year", "DESC"]]
+            // =========================
+            // SIDEBAR DATA (FULL, TIDAK TERFILTER)
+            // =========================
+            const categories = await Category.findAll({
+                order: [["name", "ASC"]]
             });
 
-            // ============================
-            // TAMBAHKAN IMAGE FULL PATH
-            // ============================
-            const booksWithImages = booksData.rows.map(book => ({
+            const subjects = await Subject.findAll({
+                order: [["name", "ASC"]]
+            });
+
+            const yearsRaw = await Book.findAll({
+                attributes: [
+                    [Book.sequelize.fn("DISTINCT", Book.sequelize.col("publish_year")), "year"]
+                ],
+                where: { publish_year: { [Op.ne]: null } },
+                raw: true,
+                order: [[Book.sequelize.col("year"), "DESC"]]
+            });
+
+            // =========================
+            // IMAGE PATH
+            // =========================
+            const books = rows.map(book => ({
                 ...book.get(),
                 image_full_path: book.image ? `/image/uploads/${book.image}` : null
             }));
 
             return res.render("user/index", {
                 title: "Katalog Buku",
-                books: booksWithImages,
-                totalItems: booksData.count,
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(booksData.count / limit),
+                books,
+                totalItems: count,
+                currentPage,
+                totalPages: Math.ceil(count / perPage),
                 sidebarData: {
                     categories,
                     subjects,
-                    years: years.map(y => ({ year: y.publish_year }))
+                    years: yearsRaw
                 },
                 query: {
                     q,

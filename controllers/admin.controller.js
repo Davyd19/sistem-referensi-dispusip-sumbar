@@ -31,8 +31,11 @@ module.exports = {
                 category = "",
                 subject = "",
                 year = "",
-                page = 1
+                page = 1,
+                incomplete = ""
             } = req.query;
+
+            const isIncomplete = incomplete === "1";
 
             const limit = 100;
             const currentPage = parseInt(page) || 1;
@@ -50,6 +53,9 @@ module.exports = {
             const whereCondition = {};
             if (category) whereCondition.category_id = category;
             if (year) whereCondition.publish_year = year;
+            if (subject) {
+                whereCondition['$Subjects.id$'] = subject;
+            }
 
             // Logika Kotak Pencarian Utama (Hanya kolom di tabel Book)
             if (q) {
@@ -57,26 +63,21 @@ module.exports = {
                 if (searchBy === "isbn") whereCondition.isbn = { [operator]: searchValue };
             }
 
+            if (q && searchBy === "subject") {
+                whereCondition['$Subjects.name$'] = { [operator]: searchValue };
+            }
+
+            if (q && searchBy === "category") {
+                whereCondition['$Category.name$'] = { [operator]: searchValue };
+            }
+
             const includeOptions = [
                 { model: Category, required: false },
-                { 
-                    model: Author, 
-                    as: 'Authors', 
-                    required: (q && searchBy === "author"),
-                    where: (q && searchBy === "author") ? { name: { [operator]: searchValue } } : null
-                },
-                { 
-                    model: Publisher, 
-                    as: 'Publishers', 
-                    required: (q && searchBy === "publisher"),
-                    where: (q && searchBy === "publisher") ? { name: { [operator]: searchValue } } : null
-                },
-                { 
-                    model: Subject, 
-                    as: 'Subjects', 
-                    required: (!!subject || (q && searchBy === "subject")),
-                    where: subject ? { id: subject } : ((q && searchBy === "subject") ? { name: { [operator]: searchValue } } : null)
-                },
+
+                { model: Author, as: 'Authors', required: false },
+                { model: Publisher, as: 'Publishers', required: false },
+                { model: Subject, as: 'Subjects', required: false },
+
                 { model: BookCopy, as: 'copies', required: false }
             ];
 
@@ -90,6 +91,22 @@ module.exports = {
                 distinct: true, // Menghitung buku berdasarkan ID yang unik saja
                 col: 'id'       // Memaksa count dilakukan hanya pada kolom Book.id untuk menghindari 'id' duplikat
             });
+
+            let filteredBooks = books;
+
+            if (isIncomplete) {
+                filteredBooks = books.filter(book => {
+                    const hasCategory = !!book.Category;
+                    const hasSubjects = book.Subjects && book.Subjects.length > 0;
+                    const hasShelf =
+                        book.shelf_location &&
+                        book.shelf_location.trim() !== "" &&
+                        book.shelf_location !== "-";
+                    const hasCopies = book.copies && book.copies.length > 0;
+
+                    return !hasCategory || !hasSubjects || !hasShelf || !hasCopies;
+                });
+            }
 
             let totalFilteredCopies = 0;
             if (q || category || subject || year) {
@@ -120,8 +137,8 @@ module.exports = {
 
             res.render("admin/admin_books_list", {
                 title: "Daftar Buku",
-                books,
-                totalTitle: count, 
+                books: filteredBooks,
+                totalTitle: isIncomplete ? filteredBooks.length : count,
                 totalBook: totalFilteredCopies,
                 currentPage: currentPage,
                 totalPages: Math.ceil(count / limit),
@@ -129,7 +146,8 @@ module.exports = {
                 query: req.query,
                 allCategories,
                 allSubjects,
-                allYears: allYearsRaw.map(y => y.year).filter(y => y && y !== '-').sort((a, b) => b - a)
+                allYears: allYearsRaw.map(y => y.year).filter(y => y && y !== '-').sort((a, b) => b - a),
+                incomplete: isIncomplete,
             });
         } catch (err) {
             console.error("DEBUG ERROR:", err);
@@ -310,8 +328,8 @@ module.exports = {
 
                 let categoryId = null;
                 const finalCategoryName = (data.categoryName && data.categoryName.trim() !== "") 
-                                          ? data.categoryName.trim() 
-                                          : 'Tanpa Kategori';
+                                            ? data.categoryName.trim() 
+                                            : 'Tanpa Kategori';
                 
                 const [cat] = await Category.findOrCreate({ 
                     where: { name: finalCategoryName } 

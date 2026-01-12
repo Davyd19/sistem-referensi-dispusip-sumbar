@@ -65,8 +65,13 @@
             📄 Download Template
         </a>
 
-        <button onclick="filterIncomplete()" id="btnFilterIncomplete" class="bg-orange-500 text-white px-4 py-2 rounded-md font-bold hover:bg-orange-600 transition shadow-sm">
-            <i class="fas fa-exclamation-circle mr-2"></i> Tampilkan Data Tidak Lengkap
+        <button
+            onclick="toggleIncompleteFilter()"
+            id="btnFilterIncomplete"
+            class="<%= query.incomplete ? 'bg-gray-700' : 'bg-orange-500' %> 
+                    text-white px-4 py-2 rounded-md font-bold">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <%= query.incomplete ? 'Tampilkan Semua Data' : 'Tampilkan Data Tidak Lengkap' %>
         </button>
 
         <button onclick="toggleDeleteMode()" id="btnDeleteMode" class="bg-red-100 text-red-600 px-4 py-2 rounded-md font-bold hover:bg-red-200 border border-red-200 transition">
@@ -298,12 +303,24 @@
         </div>
     </div>
 
+            <%
+            const qs = new URLSearchParams({
+                q: query.q || '',
+                searchBy: query.searchBy || 'title',
+                matchType: query.matchType || 'contains',
+                category: query.category || '',
+                subject: query.subject || '',
+                year: query.year || '',
+                incomplete: query.incomplete || ''
+            }).toString();
+            %>
+
             <% if (totalPages > 1) { %>
                 <div class="mt-8 flex flex-wrap justify-center items-center gap-1">
                         <% if (currentPage > 1) { %>
-                            <a href="/admin/books?q=<%= typeof q !== 'undefined' ? q : '' %>&page=<%= parseInt(currentPage) - 1 %>"
-                            class="px-3 py-1 border rounded text-sm bg-white text-gray-600 hover:bg-blue-50">
-                            <i class="fas fa-chevron-left"></i>
+                            <a href="/admin/books?<%= qs %>&page=<%= currentPage - 1 %>"
+                                class="px-3 py-1 border rounded text-sm bg-white text-gray-600 hover:bg-blue-50">
+                                <i class="fas fa-chevron-left"></i>
                             </a>
                         <% } %>
 
@@ -338,17 +355,20 @@
                             <% if (i === '...') { %>
                                 <span class="px-3 py-1 text-gray-400">...</span>
                             <% } else { %>
-                                <a href="/admin/books?q=<%= typeof q !== 'undefined' ? q : '' %>&page=<%= i %>"
-                                class="px-3 py-1 border rounded text-sm transition-colors <%= currentPage == i ? 'bg-blue-600 text-white border-blue-600 font-bold' : 'bg-white text-gray-600 hover:bg-blue-50' %>">
+                                <a href="/admin/books?<%= qs %>&page=<%= i %>"
+                                    class="px-3 py-1 border rounded text-sm transition-colors
+                                    <%= currentPage == i
+                                        ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                                        : 'bg-white text-gray-600 hover:bg-blue-50' %>">
                                     <%= i %>
                                 </a>
                             <% } %>
                         <% }) %>
 
                         <% if (currentPage < totalPages) { %>
-                            <a href="/admin/books?q=<%= typeof q !== 'undefined' ? q : '' %>&page=<%= parseInt(currentPage) + 1 %>"
-                            class="px-3 py-1 border rounded text-sm bg-white text-gray-600 hover:bg-blue-50">
-                            <i class="fas fa-chevron-right"></i>
+                            <a href="/admin/books?<%= qs %>&page=<%= currentPage + 1 %>"
+                                class="px-3 py-1 border rounded text-sm bg-white text-gray-600 hover:bg-blue-50">
+                                <i class="fas fa-chevron-right"></i>
                             </a>
                         <% } %>
 
@@ -528,21 +548,18 @@
             }
         }
 
-        let isIncompleteFiltered = false;
-        function filterIncomplete() {
-            const rows = document.querySelectorAll('.book-row');
-            const btn = document.getElementById('btnFilterIncomplete');
-            if (!isIncompleteFiltered) {
-                rows.forEach(row => { if (!row.classList.contains('is-incomplete')) row.style.display = 'none'; });
-                btn.innerHTML = '<i class="fas fa-list mr-2"></i> Tampilkan Semua Data';
-                btn.classList.replace('bg-orange-500', 'bg-gray-700');
-                isIncompleteFiltered = true;
+        function toggleIncompleteFilter() {
+            const url = new URL(window.location.href);
+            const isActive = url.searchParams.get('incomplete') === '1';
+
+            if (isActive) {
+                url.searchParams.delete('incomplete');
             } else {
-                rows.forEach(row => { row.style.display = ''; });
-                btn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Tampilkan Data Tidak Lengkap';
-                btn.classList.replace('bg-gray-700', 'bg-orange-500');
-                isIncompleteFiltered = false;
+                url.searchParams.set('incomplete', '1');
             }
+
+            url.searchParams.delete('page'); // reset ke halaman 1
+            window.location.href = url.toString();
         }
 
         function toggleModal(id) {
