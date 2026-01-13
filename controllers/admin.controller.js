@@ -20,7 +20,8 @@ const EXCEL_COLUMNS = [
     { header: 'Subjek* (pisahkan dengan koma)', key: 'subjects', width: 30 },
     { header: 'Nomor Induk* (pisahkan dengan koma)', key: 'no_induk', width: 40 },
     { header: 'Catatan', key: 'notes', width: 30 },
-    { header: 'Abstrak', key: 'abstract', width: 50 }
+    { header: 'Abstrak', key: 'abstract', width: 50 },
+    { header: 'Gambar', key: 'image', width: 30 }
 ];
 
 const axios = require('axios');
@@ -284,8 +285,18 @@ module.exports = {
 
             worksheet.columns = EXCEL_COLUMNS;
 
-            worksheet.addRow({ title: 'Contoh Judul Buku', category: 'Fiksi', authors: 'Penulis A, Penulis B', no_induk: 'B001, B002',imageUrl: 'https://upload.wikimedia.org/wikipedia/id/8/8e/Laskar_pelangi_sampul.jpg' });
-
+            worksheet.addRow({ 
+                title: 'Laskar Pelangi', 
+                category: 'Fiksi', 
+                authors_penulis: 'Andrea Hirata', 
+                isbn: '978-602-291-663-5',
+                call_number: '813 AND l',
+                shelf_location: 'Rak A1',
+                no_induk: 'B001',
+                publishers: 'Bentang Pustaka',
+                subjects: 'Novel',
+                image: 'https://upload.wikimedia.org/wikipedia/id/8/8e/Laskar_pelangi_sampul.jpg' // Contoh URL gambar
+            });
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename=Template_Import_Buku.xlsx');
             await workbook.xlsx.write(res);
