@@ -269,9 +269,12 @@ module.exports = {
             let totalFilteredCopies = 0;
             if (q || category || subject || year) {
                 totalFilteredCopies = await BookCopy.count({
+                    distinct: true, // TAMBAHKAN INI: Agar tidak menghitung duplikat
+                    col: 'id',      // TAMBAHKAN INI: Menghitung berdasarkan ID unik BookCopy
                     include: [{
                         model: Book,
                         where: whereCondition,
+                        // Kita tetap butuh include ini agar filter search (by author/subject) tetap jalan
                         include: includeOptions.filter(opt => opt.model !== BookCopy), 
                         required: true
                     }]
