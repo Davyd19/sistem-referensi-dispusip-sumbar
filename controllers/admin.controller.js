@@ -1,4 +1,4 @@
-const { Book, Category, Author, Publisher, Subject, BookCopy } = require("../models");
+const { Book, Category, Author, Publisher, Subject, BookCopy, Sequelize } = require("../models");
 const { Op } = require("sequelize");
 const ExcelJS = require('exceljs');
 
@@ -179,18 +179,12 @@ module.exports = {
     listBooks: async (req, res) => {
         try {
             const {
-                q = "",
-                searchBy = "title",
-                matchType = "contains",
-                category = "",
-                subject = "",
-                year = "",
-                page = 1,
-                incomplete = ""
+                q = "", searchBy = "title", matchType = "contains",
+                category = "", subject = "", year = "",
+                page = 1, incomplete = ""
             } = req.query;
 
             const isIncomplete = incomplete === "1";
-
             const limit = 100;
             const currentPage = parseInt(page) || 1;
             const offset = (currentPage - 1) * limit;
@@ -207,102 +201,80 @@ module.exports = {
             const whereCondition = {};
             if (category) whereCondition.category_id = category;
             if (year) whereCondition.publish_year = year;
-            if (subject) {
-                whereCondition['$Subjects.id$'] = subject;
-            }
+            if (subject) whereCondition['$Subjects.id$'] = subject;
 
-            // Logika Kotak Pencarian Utama (Hanya kolom di tabel Book)
             if (q) {
                 if (searchBy === "title") whereCondition.title = { [operator]: searchValue };
                 if (searchBy === "isbn") whereCondition.isbn = { [operator]: searchValue };
+                if (searchBy === "subject") whereCondition['$Subjects.name$'] = { [operator]: searchValue };
+                if (searchBy === "category") whereCondition['$Category.name$'] = { [operator]: searchValue };
             }
 
-            if (q && searchBy === "subject") {
-                whereCondition['$Subjects.name$'] = { [operator]: searchValue };
-            }
-
-            if (q && searchBy === "category") {
-                whereCondition['$Category.name$'] = { [operator]: searchValue };
+            if (isIncomplete) {
+                whereCondition[Op.or] = [
+                    { category_id: null },
+                    { shelf_location: null },
+                    { shelf_location: "" },
+                    { shelf_location: "-" },
+                    { isbn: null },
+                    { isbn: "" },
+                    { call_number: null },
+                    { call_number: "" },
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookSubjects WHERE BookSubjects.book_id = Book.id)`),
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookAuthors WHERE BookAuthors.book_id = Book.id AND BookAuthors.role = 'penulis')`),
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookPublishers WHERE BookPublishers.book_id = Book.id)`),
+                    Sequelize.literal(`(SELECT COUNT(*) FROM BookCopies WHERE BookCopies.book_id = Book.id) = 0`)
+                ];
             }
 
             const includeOptions = [
                 { model: Category, required: false },
-
                 { model: Author, as: 'Authors', required: false },
                 { model: Publisher, as: 'Publishers', required: false },
                 { model: Subject, as: 'Subjects', required: false },
-
                 { model: BookCopy, as: 'copies', required: false }
             ];
 
-            // EKSEKUSI QUERY DENGAN PERBAIKAN LIMIT & COUNT
             const { count, rows: books } = await Book.findAndCountAll({
                 where: whereCondition,
                 include: includeOptions,
                 order: [['id', 'DESC']],
                 limit: limit,
                 offset: offset,
-                distinct: true, // Menghitung buku berdasarkan ID yang unik saja
-                col: 'id'       // Memaksa count dilakukan hanya pada kolom Book.id untuk menghindari 'id' duplikat
+                distinct: true,
+                col: 'id'
             });
 
-            let filteredBooks = books;
+            // Hitung total eksemplar sesuai filter
+            const totalFilteredCopies = await BookCopy.count({
+                include: [{
+                    model: Book,
+                    where: whereCondition,
+                    required: true,
+                    include: [
+                        { model: Author, as: 'Authors', required: false },
+                        { model: Publisher, as: 'Publishers', required: false },
+                        { model: Subject, as: 'Subjects', required: false }
+                    ]
+                }]
+            });
 
-            if (isIncomplete) {
-                filteredBooks = books.filter(book => {
-                    const hasCategory = !!book.Category;
-                    const hasSubjects = book.Subjects && book.Subjects.length > 0;
-                    const hasShelf =
-                        book.shelf_location &&
-                        book.shelf_location.trim() !== "" &&
-                        book.shelf_location !== "-";
-                    const hasCopies = book.copies && book.copies.length > 0;
-                    const hasIsbn = !!book.isbn && book.isbn.trim() !== "";
-                    const hasCallNumber = !!book.call_number && book.call_number.trim() !== "";
-                    const hasAuthors = book.Authors && book.Authors.length > 0;
-                    const hasPublishers = book.Publishers && book.Publishers.length > 0;
-
-                    return !hasCategory || !hasSubjects || !hasShelf || !hasCopies || !hasIsbn || !hasCallNumber || !hasAuthors || !hasPublishers;
-                });
-            }
-
-            let totalFilteredCopies = 0;
-            if (q || category || subject || year) {
-                totalFilteredCopies = await BookCopy.count({
-                    distinct: true, // TAMBAHKAN INI: Agar tidak menghitung duplikat
-                    col: 'id',      // TAMBAHKAN INI: Menghitung berdasarkan ID unik BookCopy
-                    include: [{
-                        model: Book,
-                        where: whereCondition,
-                        // Kita tetap butuh include ini agar filter search (by author/subject) tetap jalan
-                        include: includeOptions.filter(opt => opt.model !== BookCopy), 
-                        required: true
-                    }]
-                });
-            } else {
-                // Jika tidak ada filter, hitung semua (lebih cepat)
-                totalFilteredCopies = await BookCopy.count();
-            }
-
-            // Ambil Data untuk Dropdown
             const allCategories = await Category.findAll({ order: [['name', 'ASC']] });
             const allSubjects = await Subject.findAll({ order: [['name', 'ASC']] });
-            
-            // Ambil list tahun yang unik
             const allYearsRaw = await Book.findAll({
-                attributes: [[Book.sequelize.fn("DISTINCT", Book.sequelize.col("publish_year")), "year"]],
+                attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("publish_year")), "year"]],
                 where: { publish_year: { [Op.ne]: null } },
                 raw: true
             });
 
             res.render("admin/admin_books_list", {
                 title: "Daftar Buku",
-                books: filteredBooks,
-                totalTitle: isIncomplete ? filteredBooks.length : count,
+                books,
+                totalTitle: count,
                 totalBook: totalFilteredCopies,
-                currentPage: currentPage,
+                currentPage,
                 totalPages: Math.ceil(count / limit),
-                limit: limit,
+                limit,
                 query: req.query,
                 allCategories,
                 allSubjects,

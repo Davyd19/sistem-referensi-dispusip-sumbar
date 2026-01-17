@@ -747,5 +747,29 @@
                 }
             }, false);
         }
+
+        const importForm = document.getElementById('importForm');
+
+        if (importForm) {
+            importForm.onsubmit = function(e) {
+                if (!fileInput.files.length) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Pilih file dulu!' });
+                    return false;
+                }
+                
+                Swal.fire({
+                    title: 'Memproses Data Excel',
+                    html: 'Sistem sedang mengimport data...<br><b>Mohon tidak menutup tab ini.</b>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                return true;
+            };
+        }
     </script>
     <%- include('partials/footer') %>
