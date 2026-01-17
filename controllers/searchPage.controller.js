@@ -116,12 +116,13 @@ module.exports = {
             // =========================
             // QUERY BUKU
             // =========================
+            // Urutkan berdasarkan updatedAt DESC (buku yang terakhir di-update muncul di atas)
             const { count, rows } = await Book.findAndCountAll({
                 where: whereCondition,
                 include: includeOptions,
                 limit: perPage,
                 offset,
-                order: [["id", "DESC"]],
+                order: [["updatedAt", "DESC"]],
                 distinct: true
             });
 

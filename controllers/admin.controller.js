@@ -245,19 +245,55 @@ module.exports = {
                 col: 'id'
             });
 
-            // Hitung total eksemplar sesuai filter
-            const totalFilteredCopies = await BookCopy.count({
-                include: [{
-                    model: Book,
+            // Hitung total eksemplar (nomor induk) sesuai filter
+            // Total buku = jumlah semua nomor induk (BookCopy) dari database BookCopies
+            // BUKAN dari field stock_total di Book, dan BUKAN jumlah judul buku (Book)
+            // Satu buku bisa punya beberapa nomor induk, jadi total buku = jumlah semua BookCopy
+            
+            let totalFilteredCopies;
+            
+            // Jika tidak ada filter, hitung langsung semua BookCopy dari database
+            const hasFilter = q || category || subject || year || isIncomplete;
+            
+            if (!hasFilter) {
+                // Tidak ada filter, hitung SEMUA BookCopy langsung dari database (paling cepat dan akurat)
+                totalFilteredCopies = await BookCopy.count();
+                console.log(`[LIST BOOKS] Tidak ada filter - Total Buku dari database: ${totalFilteredCopies}`);
+            } else {
+                // Ada filter, ambil book_id yang memenuhi filter lalu hitung BookCopy-nya
+                // Step 1: Ambil semua book_id yang memenuhi filter
+                const filteredBookRecords = await Book.findAll({
                     where: whereCondition,
-                    required: true,
                     include: [
+                        { model: Category, required: false },
                         { model: Author, as: 'Authors', required: false },
                         { model: Publisher, as: 'Publishers', required: false },
                         { model: Subject, as: 'Subjects', required: false }
-                    ]
-                }]
-            });
+                    ],
+                    attributes: ['id'],
+                    distinct: true
+                });
+                
+                const filteredBookIds = filteredBookRecords.map(book => book.id);
+                console.log(`[LIST BOOKS] Filter aktif - Jumlah buku terfilter: ${filteredBookIds.length}, Book IDs: [${filteredBookIds.slice(0, 5).join(', ')}${filteredBookIds.length > 5 ? '...' : ''}]`);
+                
+                // Step 2: Hitung total BookCopy dari buku-buku yang terfilter
+                // Ini menghitung langsung dari database BookCopies, bukan dari stock_total
+                if (filteredBookIds.length > 0) {
+                    totalFilteredCopies = await BookCopy.count({
+                        where: {
+                            book_id: { [Op.in]: filteredBookIds }
+                        }
+                    });
+                    console.log(`[LIST BOOKS] Total Buku (nomor induk) dari database: ${totalFilteredCopies}`);
+                } else {
+                    // Tidak ada buku yang memenuhi filter
+                    totalFilteredCopies = 0;
+                    console.log(`[LIST BOOKS] Tidak ada buku terfilter - Total Buku: 0`);
+                }
+            }
+            
+            console.log(`[LIST BOOKS] FINAL - Total Judul (Book): ${count}, Total Buku (BookCopy/nomor induk): ${totalFilteredCopies}`);
 
             const allCategories = await Category.findAll({ order: [['name', 'ASC']] });
             const allSubjects = await Subject.findAll({ order: [['name', 'ASC']] });
@@ -992,20 +1028,43 @@ module.exports = {
             await processRole(data.authors_editor, 'editor');
             await processRole(data.authors_pj, 'penanggung jawab');
 
-            // 5. Update Nomor Induk (tetap sama)
+            // 5. Update Nomor Induk (hanya jika benar-benar berubah)
             if (data.no_induk) {
                 const noIndukArray = data.no_induk.split(/[\n,]+/).map(n => n.trim()).filter(n => n !== "");
-                const existingCopies = await BookCopy.findAll({
-                    where: { no_induk: { [Op.in]: noIndukArray }, book_id: { [Op.ne]: book.id } }
+                
+                // Ambil nomor induk yang sudah ada untuk buku ini
+                const currentCopies = await BookCopy.findAll({
+                    where: { book_id: book.id },
+                    attributes: ['no_induk']
                 });
+                const currentNoInduks = currentCopies.map(c => c.no_induk).sort();
+                const newNoInduks = [...noIndukArray].sort();
+                
+                // Bandingkan apakah ada perubahan
+                const hasChanges = currentNoInduks.length !== newNoInduks.length || 
+                                 !currentNoInduks.every((val, idx) => val === newNoInduks[idx]);
+                
+                // Hanya update jika ada perubahan nomor induk
+                if (hasChanges) {
+                    const existingCopies = await BookCopy.findAll({
+                        where: { no_induk: { [Op.in]: noIndukArray }, book_id: { [Op.ne]: book.id } }
+                    });
 
-                if (existingCopies.length > 0) {
-                    return res.status(400).json({ success: false, message: `Nomor Induk [${existingCopies.map(c => c.no_induk).join(', ')}] sudah terdaftar!` });
+                    if (existingCopies.length > 0) {
+                        return res.status(400).json({ success: false, message: `Nomor Induk [${existingCopies.map(c => c.no_induk).join(', ')}] sudah terdaftar!` });
+                    }
+
+                    // Hapus nomor induk lama dan buat yang baru
+                    await BookCopy.destroy({ where: { book_id: book.id } });
+                    await BookCopy.bulkCreate(noIndukArray.map(n => ({ book_id: book.id, no_induk: n, status: 'tersedia' })));
+                    
+                    // Update stock_total dengan menghitung ulang dari database (lebih akurat)
+                    const actualCount = await BookCopy.count({ where: { book_id: book.id } });
+                    await book.update({ stock_total: actualCount });
+                    console.log(`✓ Nomor induk diupdate untuk buku ID ${book.id}, total sekarang: ${actualCount}`);
+                } else {
+                    console.log(`✓ Nomor induk tidak berubah untuk buku ID ${book.id}, tidak perlu update`);
                 }
-
-                await BookCopy.destroy({ where: { book_id: book.id } });
-                await BookCopy.bulkCreate(noIndukArray.map(n => ({ book_id: book.id, no_induk: n, status: 'tersedia' })));
-                await book.update({ stock_total: noIndukArray.length });
             }
 
             // 6. Update Relasi Lainnya (Publisher & Subject)

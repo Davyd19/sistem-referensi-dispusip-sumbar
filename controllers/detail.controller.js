@@ -130,7 +130,7 @@ module.exports = {
                     { model: Author, as: 'Authors', required: false }
                 ],
                 limit: 10,
-                order: [['id', 'DESC']] // Tampilkan yang terbaru atau bisa diubah menjadi random
+                order: [['updatedAt', 'DESC']] // Urutkan berdasarkan updatedAt (buku yang terakhir di-update muncul di atas)
             });
 
             const relatedFormatted = relatedBooks.map(bk => ({
