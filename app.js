@@ -13,7 +13,7 @@ app.use(session({
     secret: "secret_key_admin", 
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 60 * 60 * 1000 } // 1 jam
+    cookie: { maxAge: 8 * 60 * 60 * 1000 } // 8 jam
 }));
 
 app.set('view engine', 'ejs');
