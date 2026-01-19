@@ -303,19 +303,30 @@ module.exports = {
             const exemplarsMap = {};
             
             if (bookIds.length > 0) {
-                // Gunakan BookCopy.count() untuk setiap buku secara paralel
-                const countPromises = bookIds.map(async (bookId) => {
-                    const count = await BookCopy.count({
-                        where: { book_id: bookId }
-                    });
-                    return { bookId, count };
+                // Optimasi: Gunakan satu query GROUP BY untuk menghitung semua sekaligus
+                // Lebih efisien daripada multiple count queries
+                const exemplarsCount = await BookCopy.findAll({
+                    attributes: [
+                        'book_id',
+                        [BookCopy.sequelize.fn('COUNT', BookCopy.sequelize.col('id')), 'count']
+                    ],
+                    where: {
+                        book_id: { [Op.in]: bookIds }
+                    },
+                    group: ['book_id'],
+                    raw: true
                 });
                 
-                const counts = await Promise.all(countPromises);
-                
                 // Buat map untuk akses cepat jumlah eksemplar per buku
-                counts.forEach(({ bookId, count }) => {
-                    exemplarsMap[bookId] = count || 0;
+                exemplarsCount.forEach((item) => {
+                    exemplarsMap[item.book_id] = parseInt(item.count) || 0;
+                });
+                
+                // Set 0 untuk buku yang tidak memiliki eksemplar (tidak muncul di hasil GROUP BY)
+                bookIds.forEach(bookId => {
+                    if (!exemplarsMap.hasOwnProperty(bookId)) {
+                        exemplarsMap[bookId] = 0;
+                    }
                 });
             }
 

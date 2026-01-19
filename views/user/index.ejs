@@ -201,21 +201,21 @@
                                         <span>Urutkan:</span>
                                     </label>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <select id="sortBy" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-[11px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition" onchange="window.applySorting()">
+                                        <select id="sortByMobile" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-[11px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition" onchange="window.applySorting()">
                                             <option value="title" <%= (!query.sortBy || query.sortBy === 'title') ? 'selected' : '' %>>Judul (A-Z)</option>
                                             <option value="updatedAt" <%= query.sortBy === 'updatedAt' ? 'selected' : '' %>>Terakhir Diupdate</option>
                                             <option value="createdAt" <%= query.sortBy === 'createdAt' ? 'selected' : '' %>>Terakhir Ditambahkan</option>
                                         </select>
                                         <button 
                                             type="button" 
-                                            id="sortOrderToggle" 
+                                            id="sortOrderToggleMobile" 
                                             class="w-full px-2 py-1.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 border border-gray-300 rounded-md text-[11px] transition shadow-sm flex items-center justify-center gap-1"
                                             onclick="window.toggleSortOrder()"
                                             data-order="<%= query.sortOrder || 'ASC' %>"
                                             title="Klik untuk mengubah urutan"
                                         >
-                                            <i id="sortOrderIcon" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600 text-[10px]"></i>
-                                            <span id="sortOrderText" class="text-[11px]"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
+                                            <i id="sortOrderIconMobile" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600 text-[10px]"></i>
+                                            <span id="sortOrderTextMobile" class="text-[11px]"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
                                         </button>
                                     </div>
                                 </div>
@@ -227,22 +227,22 @@
                                         <span class="text-xs md:text-sm">Urutkan Berdasarkan:</span>
                                     </label>
                                     <div class="flex gap-2 items-center flex-shrink-0">
-                                        <select id="sortBy" class="px-3 md:px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" style="min-width: 140px;" onchange="window.applySorting()">
+                                        <select id="sortByDesktop" class="px-3 md:px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" style="min-width: 140px;" onchange="window.applySorting()">
                                             <option value="title" <%= (!query.sortBy || query.sortBy === 'title') ? 'selected' : '' %>>Judul (A-Z)</option>
                                             <option value="updatedAt" <%= query.sortBy === 'updatedAt' ? 'selected' : '' %>>Terakhir Diupdate</option>
                                             <option value="createdAt" <%= query.sortBy === 'createdAt' ? 'selected' : '' %>>Terakhir Ditambahkan</option>
                                         </select>
                                         <button 
                                             type="button" 
-                                            id="sortOrderToggle" 
+                                            id="sortOrderToggleDesktop" 
                                             class="px-3 md:px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-xs md:text-sm transition shadow-sm flex items-center gap-2 justify-center whitespace-nowrap"
                                             style="min-width: 100px;"
                                             onclick="window.toggleSortOrder()"
                                             data-order="<%= query.sortOrder || 'ASC' %>"
                                             title="Klik untuk mengubah urutan"
                                         >
-                                            <i id="sortOrderIcon" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600 text-xs md:text-sm"></i>
-                                            <span id="sortOrderText" class="text-xs md:text-sm"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
+                                            <i id="sortOrderIconDesktop" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600 text-xs md:text-sm"></i>
+                                            <span id="sortOrderTextDesktop" class="text-xs md:text-sm"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
                                         </button>
                                     </div>
                                 </div>
@@ -413,10 +413,23 @@
 
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <script>
+        // Helper function untuk mendapatkan elemen yang terlihat (visible)
+        function getVisibleElement(...ids) {
+            for (const id of ids) {
+                const element = document.getElementById(id);
+                if (element && element.offsetParent !== null) {
+                    return element;
+                }
+            }
+            // Jika tidak ada yang terlihat, return yang pertama (fallback)
+            return document.getElementById(ids[0]);
+        }
+
         // Update hidden inputs in filter forms with current sorting values
         function updateFilterSortingInputs() {
-            const sortBySelect = document.getElementById('sortBy');
-            const sortOrderToggle = document.getElementById('sortOrderToggle');
+            // Ambil elemen yang terlihat (mobile atau desktop)
+            const sortBySelect = getVisibleElement('sortByMobile', 'sortByDesktop');
+            const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
             
             if (!sortBySelect) return;
             
@@ -449,8 +462,9 @@
         // Make functions globally accessible
         window.applySorting = function() {
             try {
-                const sortBySelect = document.getElementById('sortBy');
-                const sortOrderToggle = document.getElementById('sortOrderToggle');
+                // Ambil elemen yang terlihat (mobile atau desktop)
+                const sortBySelect = getVisibleElement('sortByMobile', 'sortByDesktop');
+                const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
                 
                 if (!sortBySelect) {
                     console.error('sortBy element not found');
@@ -540,9 +554,10 @@
 
         window.toggleSortOrder = function() {
             try {
-                const sortOrderToggle = document.getElementById('sortOrderToggle');
-                const sortOrderIcon = document.getElementById('sortOrderIcon');
-                const sortOrderText = document.getElementById('sortOrderText');
+                // Ambil elemen yang terlihat (mobile atau desktop)
+                const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
+                const sortOrderIcon = getVisibleElement('sortOrderIconMobile', 'sortOrderIconDesktop');
+                const sortOrderText = getVisibleElement('sortOrderTextMobile', 'sortOrderTextDesktop');
                 
                 if (!sortOrderToggle) {
                     console.error('sortOrderToggle element not found');
@@ -552,17 +567,37 @@
                 const currentOrder = sortOrderToggle.getAttribute('data-order') || 'ASC';
                 const newOrder = currentOrder === 'ASC' ? 'DESC' : 'ASC';
                 
-                // Update data attribute
-                sortOrderToggle.setAttribute('data-order', newOrder);
+                // Update data attribute untuk kedua elemen (mobile dan desktop)
+                const sortOrderToggleMobile = document.getElementById('sortOrderToggleMobile');
+                const sortOrderToggleDesktop = document.getElementById('sortOrderToggleDesktop');
+                if (sortOrderToggleMobile) sortOrderToggleMobile.setAttribute('data-order', newOrder);
+                if (sortOrderToggleDesktop) sortOrderToggleDesktop.setAttribute('data-order', newOrder);
                 
-                // Update icon and text
-                if (sortOrderIcon && sortOrderText) {
+                // Update icon and text untuk kedua elemen (mobile dan desktop)
+                const sortOrderIconMobile = document.getElementById('sortOrderIconMobile');
+                const sortOrderIconDesktop = document.getElementById('sortOrderIconDesktop');
+                const sortOrderTextMobile = document.getElementById('sortOrderTextMobile');
+                const sortOrderTextDesktop = document.getElementById('sortOrderTextDesktop');
+                
+                // Update mobile elements
+                if (sortOrderIconMobile && sortOrderTextMobile) {
                     if (newOrder === 'ASC') {
-                        sortOrderIcon.className = 'fas fa-sort-amount-up text-blue-600';
-                        sortOrderText.textContent = 'Naik';
+                        sortOrderIconMobile.className = 'fas fa-sort-amount-up text-blue-600 text-[10px]';
+                        sortOrderTextMobile.textContent = 'Naik';
                     } else {
-                        sortOrderIcon.className = 'fas fa-sort-amount-down text-blue-600';
-                        sortOrderText.textContent = 'Turun';
+                        sortOrderIconMobile.className = 'fas fa-sort-amount-down text-blue-600 text-[10px]';
+                        sortOrderTextMobile.textContent = 'Turun';
+                    }
+                }
+                
+                // Update desktop elements
+                if (sortOrderIconDesktop && sortOrderTextDesktop) {
+                    if (newOrder === 'ASC') {
+                        sortOrderIconDesktop.className = 'fas fa-sort-amount-up text-blue-600 text-xs md:text-sm';
+                        sortOrderTextDesktop.textContent = 'Naik';
+                    } else {
+                        sortOrderIconDesktop.className = 'fas fa-sort-amount-down text-blue-600 text-xs md:text-sm';
+                        sortOrderTextDesktop.textContent = 'Turun';
                     }
                 }
                 
