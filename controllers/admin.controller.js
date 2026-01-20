@@ -617,33 +617,78 @@ module.exports = {
 
     deleteMultiple: async (req, res) => {
         try {
-            const { bookIds, excludeIds, confirmation, deleteAll, q, page } = req.body;
-            const redirectUrl = `/admin/books?q=${encodeURIComponent(q || '')}&page=${page || 1}`;
+            const { 
+                bookIds, excludeIds, confirmation, deleteAll, 
+                q, searchBy, matchType, category, subject, year, incomplete, page 
+            } = req.body;
+
+            // Gunakan origin_q jika q utama kosong, untuk konsistensi redirect
+            const searchKeyword = q || req.body.origin_q || '';
+            const redirectUrl = `/admin/books?q=${encodeURIComponent(searchKeyword)}&page=${page || 1}`;
 
             if (confirmation !== "HAPUS DATA") {
                 return res.status(400).send("Konfirmasi salah.");
             }
 
+            let whereCondition = {};
+            
+            if (category) whereCondition.category_id = category;
+            if (year) whereCondition.publish_year = year;
+            if (subject) whereCondition['$Subjects.id$'] = subject;
+
+            // --- PERBAIKAN DI SINI ---
+            if (q) {
+                // Pastikan q dikonversi ke String dan ambil elemen pertama jika dia Array
+                let searchValue = (Array.isArray(q) ? q[0] : String(q)).trim();
+                
+                let operator = Op.like;
+                if (matchType === "startsWith") searchValue = `${searchValue}%`;
+                else if (matchType === "endsWith") searchValue = `%${searchValue}`;
+                else if (matchType === "exact") operator = Op.eq;
+                else searchValue = `%${searchValue}%`;
+
+                if (searchBy === "title") whereCondition.title = { [operator]: searchValue };
+                if (searchBy === "isbn") whereCondition.isbn = { [operator]: searchValue };
+                if (searchBy === "subject") whereCondition['$Subjects.name$'] = { [operator]: searchValue };
+                if (searchBy === "category") whereCondition['$Category.name$'] = { [operator]: searchValue };
+            }
+
+            if (incomplete === "1") {
+                whereCondition[Op.or] = [
+                    { category_id: null }, { shelf_location: null }, { shelf_location: "" }, { shelf_location: "-" },
+                    { isbn: null }, { isbn: "" }, { call_number: null }, { call_number: "" },
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookSubjects WHERE BookSubjects.book_id = Book.id)`),
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookAuthors WHERE BookAuthors.book_id = Book.id AND BookAuthors.role = 'penulis')`),
+                    Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookPublishers WHERE BookPublishers.book_id = Book.id)`),
+                    Sequelize.literal(`(SELECT COUNT(*) FROM BookCopies WHERE BookCopies.book_id = Book.id) = 0`)
+                ];
+            }
+
+            // 3. Logika Eksekusi Hapus
             if (deleteAll === 'true') {
-                // Konversi excludeIds ke array jika cuma 1 string
                 const excluded = Array.isArray(excludeIds) ? excludeIds : (excludeIds ? [excludeIds] : []);
                 
-                // Ambil semua buku yang akan dihapus untuk cleanup gambar
+                // Gabungkan filter pencarian dengan pengecualian (excludeIds)
+                whereCondition.id = { [Op.notIn]: excluded };
+
+                // Ambil data untuk cleanup gambar (gunakan include agar filter Subject/Category jalan)
                 const booksToDelete = await Book.findAll({
-                    where: {
-                        id: { [Op.notIn]: excluded }
-                    },
-                    attributes: ['image']
+                    where: whereCondition,
+                    include: [
+                        { model: Subject, as: 'Subjects', required: false },
+                        { model: Category, required: false }
+                    ],
+                    attributes: ['id', 'image']
                 });
                 
-                // Hapus buku
+                const deleteIds = booksToDelete.map(b => b.id);
+
+                // Hapus buku berdasarkan ID yang sudah terfilter
                 await Book.destroy({
-                    where: {
-                        id: { [Op.notIn]: excluded } // HAPUS SEMUA KECUALI ID DI LIST INI
-                    }
+                    where: { id: { [Op.in]: deleteIds } }
                 });
                 
-                // Cleanup gambar yang tidak digunakan
+                // Cleanup gambar
                 const uniqueImages = [...new Set(booksToDelete.map(b => b.image).filter(img => img))];
                 for (const imageFilename of uniqueImages) {
                     await cleanupUnusedImage(imageFilename);
@@ -652,11 +697,10 @@ module.exports = {
                 return res.redirect("/admin/books?deleteSuccess=all");
             }
 
-            // Logika Normal (Manual per ID)
+            // Logika Manual (Checklist beberapa buku saja)
             const idsToDelete = Array.isArray(bookIds) ? bookIds : [bookIds];
             if (!idsToDelete || idsToDelete.length === 0) return res.redirect(redirectUrl);
 
-            // Ambil semua buku yang akan dihapus untuk cleanup gambar
             const booksToDelete = await Book.findAll({
                 where: { id: { [Op.in]: idsToDelete } },
                 attributes: ['image']
@@ -666,18 +710,17 @@ module.exports = {
                 where: { id: { [Op.in]: idsToDelete } }
             });
 
-            // Cleanup gambar yang tidak digunakan
             const uniqueImages = [...new Set(booksToDelete.map(b => b.image).filter(img => img))];
             for (const imageFilename of uniqueImages) {
                 await cleanupUnusedImage(imageFilename);
             }
 
-            res.redirect(`${redirectUrl}&deleteSuccess=${idsToDelete.length}`); // Ganti ids.length jadi idsToDelete.length
+            res.redirect(`${redirectUrl}&deleteSuccess=${idsToDelete.length}`);
         } catch (err) {
-            console.error(err);
-            res.status(500).send("Gagal menghapus data");
+            console.error("ERROR DELETE MULTIPLE:", err);
+            res.status(500).send("Gagal menghapus data: " + err.message);
         }
-    }, 
+    },
     // =========================
     // SHOW HALAMAN TAMBAH BUKU
     // =========================
@@ -710,8 +753,11 @@ module.exports = {
             const data = req.body;
             const { BookAuthor, Author, Category, Subject, Book, BookCopy, Publisher } = require("../models");
 
-            if (!data.title || !data.category_id || !data.subjects || !data.shelf_location || !data.no_induk|| !data.isbn || !data.call_number || !data.publishers || !data.authors_penulis) {
-                return res.status(400).json({ success: false, message: "Judul, Kategori, Subjek, Lokasi Rak, dan Nomor Induk, ISBN, Call Number, Penerbit, dan Penulis wajib diisi!" });
+            if (!data.title || !data.category_id || !data.subjects || !data.no_induk || !data.call_number || !data.publishers || !data.authors_penulis) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Judul, Kategori, Subjek, Nomor Induk, Nomor Panggil, Penerbit, dan Penulis wajib diisi!" 
+                });
             }
 
             // 1. Logika Kategori (Gunakan findOrCreate agar aman)
@@ -873,8 +919,8 @@ module.exports = {
             const data = req.body;
 
             // 1. Validasi Required
-            if (!data.title || !data.category_id || !data.shelf_location || !data.no_induk|| !data.isbn || !data.call_number || !data.publishers || !data.authors_penulis) {
-                return res.status(400).json({ success: false, message: "Gagal: Judul, Kategori, Lokasi, dan Nomor Induk, ISBN, Call Number, Penerbit, dan Penulis wajib diisi!" });
+            if (!data.title || !data.category_id || !data.no_induk|| !data.call_number || !data.publishers || !data.authors_penulis) {
+                return res.status(400).json({ success: false, message: "Gagal: Judul, Kategori, dan Nomor Induk, Nomor Panggil, Penerbit, dan Penulis wajib diisi!" });
             }
 
             const queryParams = new URLSearchParams({

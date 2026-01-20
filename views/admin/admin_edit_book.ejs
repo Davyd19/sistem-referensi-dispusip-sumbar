@@ -61,11 +61,11 @@
         </div>
 
         <div>
-            <label class="font-medium">ISBN <span class="text-red-500">*</span></label>
-            <input type="text" name="isbn" value="<%= typeof book !== 'undefined' ? book.isbn : '' %>" required class="w-full p-2 border rounded">
+            <label class="font-medium">ISBN</label>
+            <input type="text" name="isbn" value="<%= typeof book !== 'undefined' ? book.isbn : '' %>" class="w-full p-2 border rounded">
         </div>
         <div>
-            <label class="font-medium">Call Number <span class="text-red-500">*</span></label>
+            <label class="font-medium">Nomor Panggil <span class="text-red-500">*</span></label>
             <input type="text" name="call_number" value="<%= typeof book !== 'undefined' ? book.call_number : '' %>" required class="w-full p-2 border rounded">
         </div>
     </div>
@@ -123,7 +123,7 @@
     </div>
 
     <div>
-        <label class="font-medium">Penerbit</label>
+        <label class="font-medium">Penerbit<span class="text-red-500">*</span></label>
         <select name="publishers[]" id="publisher-select" class="w-full p-2 border rounded" multiple required>
             <% publishers.forEach(p => { %>
                 <option value="<%= p.id %>" <%= book.Publishers.some(bp => bp.id === p.id) ? 'selected' : '' %>>
@@ -169,9 +169,9 @@
 
 <!-- LOKASI RAK (POPUP MAP) -->
     <div>
-    <label class="font-medium mb-2 block">Lokasi Rak <span class="text-red-500">*</span></label>
+    <label class="font-medium mb-2 block">Lokasi Rak</label>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <input type="hidden" name="shelf_location" id="shelf_location" value="<%= book.shelf_location || '' %>" required>
+            <input type="hidden" name="shelf_location" id="shelf_location" value="<%= book.shelf_location || '' %>">
         <!-- Display nilai yang dipilih -->
         <div 
             id="shelf-location-display" 
@@ -254,7 +254,7 @@
 
 <!-- ================= COVER ================= -->
 <div>
-    <label class="font-medium">Cover Buku</label>
+    <label class="font-medium">Gambar Sampul Buku</label>
 
     <div id="cover-wrapper" class="mt-2 space-y-2">
         <!-- Hidden input untuk menandai jika gambar lama dihapus -->
@@ -898,11 +898,11 @@
         const penulis = form.querySelector('#penulis-select').value;
         const penerbit = form.querySelector('#publisher-select').value;
 
-        if (!title || !isbn || !callNumber || !category || !shelf || !noInduk || !penulis || !penerbit) {
+        if (!title || !callNumber || !category || !noInduk || !penulis || !penerbit) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Data Belum Lengkap',
-                text: 'Judul, ISBN, No Panggil, Kategori, Lokasi Rak, No Induk, Penulis, dan Penerbit wajib diisi!',
+                text: 'Judul, No Panggil, Kategori, No Induk, Penulis, dan Penerbit wajib diisi!',
                 confirmButtonColor: '#3b82f6'
             });
             return; // Berhenti di sini, tidak lanjut ke proses Fetch

@@ -549,6 +549,21 @@
             form.method = 'POST';
             form.action = '/admin/books/delete-multiple';
 
+            const urlParams = new URLSearchParams(window.location.search);
+            const filterKeys = ['q', 'searchBy', 'matchType', 'category', 'subject', 'year', 'incomplete'];
+            
+            filterKeys.forEach(key => {
+                const val = urlParams.get(key);
+                // Tambahkan pengecekan: hanya buat input jika value tidak null
+                if (val !== null) { 
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = val;
+                    form.appendChild(input);
+                }
+            });
+
             // Kirim kalimat konfirmasi
             const conf = document.createElement('input');
             conf.type = 'hidden'; conf.name = 'confirmation'; conf.value = confirmText;
@@ -574,10 +589,12 @@
                 });
             }
 
-            // Kirim data asal agar redirect kembali ke filter yang sama
-            const qInput = document.createElement('input');
-            qInput.type = 'hidden'; qInput.name = 'q'; qInput.value = originQ;
-            form.appendChild(qInput);
+            // Hindari duplikasi q jika sudah ada di loop filterKeys di atas
+            if (!urlParams.has('q')) {
+                const qInput = document.createElement('input');
+                qInput.type = 'hidden'; qInput.name = 'q'; qInput.value = originQ;
+                form.appendChild(qInput);
+            }
 
             const pageInput = document.createElement('input');
             pageInput.type = 'hidden'; pageInput.name = 'page'; pageInput.value = originPage;
