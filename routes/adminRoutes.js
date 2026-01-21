@@ -105,4 +105,10 @@ router.post('/publishers', publisherController.store);
 router.post('/publishers/update/:id', publisherController.update);
 router.post('/publishers/delete/:id', publisherController.destroy);
 
+// =========================
+// MANAJEMEN RAK (SHELF MANAGEMENT)
+// =========================
+router.get("/shelf-management", adminBookController.showShelfManagementPage);
+router.post("/shelf-management/update", adminBookController.bulkUpdateShelf);
+
 module.exports = router;

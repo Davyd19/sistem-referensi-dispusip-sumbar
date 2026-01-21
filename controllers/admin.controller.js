@@ -174,6 +174,14 @@ const processAuthorsWithRoles = async (bookId, inputNames, inputRoles, Author, B
     }
 };
 
+// Helper untuk Format Judul (Title Case) ---
+const toTitleCase = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+};
+
 
 module.exports = {
     listBooks: async (req, res) => {
@@ -213,11 +221,6 @@ module.exports = {
             if (isIncomplete) {
                 whereCondition[Op.or] = [
                     { category_id: null },
-                    { shelf_location: null },
-                    { shelf_location: "" },
-                    { shelf_location: "-" },
-                    { isbn: null },
-                    { isbn: "" },
                     { call_number: null },
                     { call_number: "" },
                     Sequelize.literal(`NOT EXISTS (SELECT 1 FROM BookSubjects WHERE BookSubjects.book_id = Book.id)`),
@@ -411,10 +414,11 @@ module.exports = {
 
     importExcel: async (req, res) => {
         try {
-            const { Book, Category, Author, Publisher, Subject, BookCopy, BookAuthor } = require("../models");
+            // Pastikan import Op dari sequelize
+            const { Book, Category, Author, Publisher, Subject, BookCopy, BookAuthor, Sequelize } = require("../models");
             
             console.log(`\n${'='.repeat(60)}`);
-            console.log(`[IMPORT EXCEL] Memulai proses import...`);
+            console.log(`[IMPORT EXCEL] Memulai proses import dengan Normalisasi Judul...`);
             console.log(`${'='.repeat(60)}\n`);
             
             if (!req.file) return res.status(400).send("Tidak ada file yang diunggah");
@@ -428,9 +432,20 @@ module.exports = {
 
             const booksData = [];
             worksheet.eachRow((row, rowNumber) => {
-                if (rowNumber === 1) return; 
+                if (rowNumber === 1) return; // Skip header
+
+                // Ambil judul mentah
+                const rawTitle = row.getCell(1).text.trim();
+                
+                // Jika judul kosong, skip
+                if (!rawTitle) return;
+
+                // 1. NORMALISASI JUDUL DI SINI
+                // Ubah format menjadi Title Case (Huruf Depan Besar) agar rapi di DB
+                const formattedTitle = toTitleCase(rawTitle);
+
                 booksData.push({
-                    title: row.getCell(1).text.trim(),
+                    title: formattedTitle, // Simpan yang sudah rapi
                     edition: row.getCell(2).text,
                     publish_year: row.getCell(3).text,
                     publish_place: row.getCell(4).text,
@@ -440,11 +455,9 @@ module.exports = {
                     language: row.getCell(8).text,
                     shelf_location: row.getCell(9).text,
                     categoryName: row.getCell(10).text,
-                    // --- URUTAN BARU ---
-                    authorsPenulis: row.getCell(11).text, // Kolom Penulis
-                    authorsEditor: row.getCell(12).text,  // Kolom Editor
-                    authorsPJ: row.getCell(13).text,      // Kolom PJ
-                    // Kolom sisanya bergeser (+2 dari sebelumnya)
+                    authorsPenulis: row.getCell(11).text,
+                    authorsEditor: row.getCell(12).text,
+                    authorsPJ: row.getCell(13).text,
                     publishers: row.getCell(14).text,
                     subjects: row.getCell(15).text,
                     noInduk: row.getCell(16).text,
@@ -455,21 +468,25 @@ module.exports = {
             });
 
             for (const data of booksData) {
-                if (!data.title) continue;
-
-                let book = await Book.findOne({ where: { title: data.title } });
+                // 2. CEK DUPLIKAT YANG LEBIH KUAT (CASE INSENSITIVE)
+                // Kita cari buku dimana Lowercase(title_di_db) == Lowercase(title_excel)
+                let book = await Book.findOne({ 
+                    where: Sequelize.where(
+                        Sequelize.fn('LOWER', Sequelize.col('title')), 
+                        Sequelize.fn('LOWER', data.title)
+                    )
+                });
                 
-                // --- LOGIKA GAMBAR ---
+                // --- LOGIKA GAMBAR (TETAP SAMA) ---
                 let finalImageName = null;
                 if (data.imageInput) {
                     if (data.imageInput.startsWith('http')) {
                         try {
+                            // Cek dulu apakah buku sudah punya gambar, kalau belum baru download
+                            // Atau jika user memaksa update gambar (opsional logic)
                             finalImageName = await downloadImage(data.imageInput, data.title);
-                            if (!finalImageName) {
-                                console.error(`Gagal mengunduh gambar untuk buku "${data.title}" dari URL: ${data.imageInput}`);
-                            }
                         } catch (err) {
-                            console.error(`Error saat download gambar untuk "${data.title}":`, err.message);
+                            console.error(`Error download gambar:`, err.message);
                         }
                     } else {
                         const checkPath = path.join(__dirname, '../public/image/uploads', data.imageInput);
@@ -478,12 +495,14 @@ module.exports = {
                 }
 
                 if (!book) {
-                    // --- BUKU BARU ---
+                    // --- BUKU BARU (INSERT) ---
+                    console.log(`[BARU] Menyimpan: ${data.title}`);
+                    
                     const finalCategoryName = (data.categoryName && data.categoryName.trim() !== "") ? data.categoryName.trim() : 'Tanpa Kategori';
                     const [cat] = await Category.findOrCreate({ where: { name: finalCategoryName } });
 
                     book = await Book.create({
-                        title: data.title,
+                        title: data.title, // Judul sudah Title Case
                         edition: data.edition,
                         publish_year: data.publish_year,
                         publish_place: data.publish_place,
@@ -499,54 +518,41 @@ module.exports = {
                     });
                     successCount++;
                 } else {
-                    // --- LENGKAPI DATA / UPDATE BUKU YANG SUDAH ADA ---
+                    // --- UPDATE BUKU YANG ADA ---
+                    console.log(`[UPDATE] Buku ditemukan: ${book.title} (Update data...)`);
+
                     const updateData = {};
+                    
+                    // Update judul ke format yang rapi (Title Case) jika sebelumnya berantakan
+                    if (book.title !== data.title) {
+                        updateData.title = data.title;
+                    }
+
                     const fields = ['edition', 'publish_year', 'publish_place', 'physical_description', 'isbn', 'call_number', 'language', 'shelf_location', 'notes', 'abstract'];
                     fields.forEach(f => {
-                        if ((!book[f] || book[f] === '-' || book[f] === '') && data[f]) updateData[f] = data[f];
+                        // Logic: Update jika data di DB kosong/strip DAN data di Excel ada isinya
+                        if ((!book[f] || book[f] === '-' || book[f] === '') && data[f]) {
+                            updateData[f] = data[f];
+                        }
                     });
                     
-                    // LOGIKA GAMBAR: Jika ada gambar baru, hapus gambar lama terlebih dahulu
+                    // Logic Gambar (Sama seperti sebelumnya)
                     if (finalImageName) {
-                        // Simpan nama gambar lama sebelum update
                         const oldImageName = book.image;
-                        
-                        // Update dengan gambar baru (selalu update jika ada gambar baru)
                         updateData.image = finalImageName;
                         
-                        // Hapus gambar lama jika berbeda dengan gambar baru
                         if (oldImageName && oldImageName !== finalImageName) {
-                            console.log(`\n[Update Buku] Menghapus gambar lama: ${oldImageName}`);
                             try {
                                 const oldImagePath = path.join(__dirname, '../public/image/uploads', oldImageName);
                                 if (fs.existsSync(oldImagePath)) {
-                                    // Cek apakah gambar lama masih digunakan oleh buku lain
                                     const booksUsingOldImage = await Book.count({
-                                        where: { 
-                                            image: oldImageName,
-                                            id: { [Op.ne]: book.id } // Kecuali buku yang sedang diupdate
-                                        }
+                                        where: { image: oldImageName, id: { [Op.ne]: book.id } }
                                     });
-                                    
-                                    if (booksUsingOldImage === 0) {
-                                        // Tidak ada buku lain yang menggunakan gambar lama, hapus file
-                                        fs.unlinkSync(oldImagePath);
-                                        console.log(`✓ Gambar lama berhasil dihapus: ${oldImageName}`);
-                                        
-                                    } else {
-                                        console.log(`⚠️  Gambar lama ${oldImageName} masih digunakan oleh ${booksUsingOldImage} buku lain, tidak dihapus`);
-                                    }
-                                } else {
-                                    console.log(`⚠️  File gambar lama tidak ditemukan di filesystem: ${oldImageName}`);
+                                    if (booksUsingOldImage === 0) fs.unlinkSync(oldImagePath);
                                 }
-                            } catch (err) {
-                                console.error(`❌ Error menghapus gambar lama ${oldImageName}:`, err.message);
-                            }
-                        } else if (oldImageName === finalImageName) {
-                            console.log(`✓ Gambar sama dengan yang sudah ada, tidak perlu update: ${finalImageName}`);
+                            } catch (err) { console.error("Gagal hapus gambar lama:", err); }
                         }
                     } else if ((!book.image || book.image === '') && finalImageName) {
-                        // Jika buku belum punya gambar dan ada gambar baru
                         updateData.image = finalImageName;
                     }
                     
@@ -554,7 +560,7 @@ module.exports = {
                     existingCount++;
                 }
 
-                // --- LOGIKA NOMOR INDUK ---
+                // --- LOGIKA NOMOR INDUK (TETAP SAMA) ---
                 if (data.noInduk) {
                     const nos = data.noInduk.split(/[\n,]+/).map(n => n.trim()).filter(n => n !== "");
                     for (const n of nos) {
@@ -563,23 +569,19 @@ module.exports = {
                             defaults: { book_id: book.id, status: 'tersedia' }
                         });
                     }
+                    // Update total stok real time
                     const countTotal = await BookCopy.count({ where: { book_id: book.id } });
                     await book.update({ stock_total: countTotal });
                 }
 
-                // --- LOGIKA RELASI AUTHOR DENGAN ROLE (3 KOLOM) ---
+                // --- LOGIKA RELASI AUTHOR & SUBJECT (TETAP SAMA) ---
                 const importAuthorWithRole = async (input, roleName) => {
                     if (!input) return;
                     const names = String(input).split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
                     for (const name of names) {
                         const [authObj] = await Author.findOrCreate({ where: { name } });
-                        // findOrCreate di BookAuthor agar tidak duplikat jika import ulang
                         await BookAuthor.findOrCreate({
-                            where: { 
-                                book_id: book.id, 
-                                author_id: authObj.id, 
-                                role: roleName 
-                            }
+                            where: { book_id: book.id, author_id: authObj.id, role: roleName }
                         });
                     }
                 };
@@ -588,7 +590,6 @@ module.exports = {
                 await importAuthorWithRole(data.authorsEditor, 'editor');
                 await importAuthorWithRole(data.authorsPJ, 'penanggung jawab');
 
-                // --- LOGIKA RELASI PUBLISHER & SUBJECT ---
                 const processRel = async (bookObj, input, Model, getter, setter) => {
                     if (!input) return;
                     const names = String(input).split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
@@ -613,7 +614,6 @@ module.exports = {
             res.status(500).send("Gagal mengimport data: " + err.message);
         }
     },
-    
 
     deleteMultiple: async (req, res) => {
         try {
@@ -769,7 +769,7 @@ module.exports = {
 
             // 2. CREATE BUKU DULU (PENTING: Variabel 'book' harus dibuat dulu)
             const book = await Book.create({
-                title: data.title,
+                title: toTitleCase(data.title),
                 edition: data.edition,
                 publish_year: data.publish_year,
                 publish_place: data.publish_place,
@@ -1009,7 +1009,7 @@ module.exports = {
 
             // 4. Update Data Utama Buku
             const updateData = {
-                title: data.title,
+                title: toTitleCase(data.title),
                 edition: data.edition,
                 publish_year: data.publish_year,
                 publish_place: data.publish_place,
@@ -1222,6 +1222,234 @@ module.exports = {
         } catch (err) {
             console.log(err);
             res.status(500).send("Gagal mencari subject");
+        }
+    },
+    // =========================
+    // SHELF MANAGEMENT
+    // =========================
+    showShelfManagementPage: async (req, res) => {
+        try {
+            // 1. Ambil Parameter (termasuk page)
+            const { q = "", category = "", subject = "", year = "", shelf = "", page = 1 } = req.query;
+            
+            // --- KONFIGURASI PAGINATION ---
+            const limit = 200; // Batas data per halaman
+            const currentPage = Math.max(1, parseInt(page) || 1);
+            const offset = (currentPage - 1) * limit;
+
+            // 2. Setup Include
+            const includeOptions = [
+                { model: Category, attributes: ['name'], required: false },
+                { model: BookCopy, as: 'copies', attributes: ['no_induk'], required: false } 
+            ];
+
+            // 3. Setup Filter
+            const whereCondition = {};
+            if (category) whereCondition.category_id = category;
+            if (year) whereCondition.publish_year = year;
+
+            if (shelf) {
+                if (shelf === 'unassigned') {
+                    whereCondition.shelf_location = { 
+                        [Op.or]: [{ [Op.eq]: null }, { [Op.eq]: "" }, { [Op.eq]: "-" }] 
+                    };
+                } else {
+                    whereCondition.shelf_location = shelf;
+                }
+            }
+
+            if (subject) {
+                includeOptions.push({
+                    model: Subject,
+                    as: 'Subjects',
+                    where: { id: subject },
+                    required: true 
+                });
+            }
+
+            if (q && q.trim() !== "") {
+                const keyword = `%${q.trim()}%`;
+                whereCondition[Op.and] = [
+                    ...(whereCondition[Op.and] || []),
+                    {
+                        [Op.or]: [
+                            { title: { [Op.like]: keyword } },
+                            { isbn: { [Op.like]: keyword } },
+                            { call_number: { [Op.like]: keyword } },
+                            { '$copies.no_induk$': { [Op.like]: keyword } } 
+                        ]
+                    }
+                ];
+            }
+
+            // 4. QUERY UTAMA: Gunakan findAndCountAll (PENTING untuk Pagination)
+            const { count, rows: books } = await Book.findAndCountAll({
+                where: whereCondition,
+                attributes: ['id', 'title', 'call_number', 'shelf_location', 'image', 'isbn', 'publish_year'],
+                include: includeOptions,
+                order: [['title', 'ASC']],
+                limit: limit,
+                offset: offset,
+                subQuery: false, 
+                distinct: true   
+            });
+
+            // 5. Data Pendukung Filter (Dropdown)
+            const categories = await Category.findAll({ order: [['name', 'ASC']], attributes: ['id', 'name'] });
+            const subjects = await Subject.findAll({ order: [['name', 'ASC']], attributes: ['id', 'name'] });
+            
+            const yearsRaw = await Book.findAll({
+                attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("publish_year")), "year"]],
+                where: { publish_year: { [Op.ne]: null } },
+                raw: true,
+                order: [['publish_year', 'DESC']]
+            });
+            const years = yearsRaw.map(y => y.year).filter(y => y);
+
+            const shelvesRaw = await Book.findAll({
+                attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("shelf_location")), "location"]],
+                where: { 
+                    shelf_location: { 
+                        [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }, { [Op.ne]: "-" }] 
+                    } 
+                },
+                raw: true,
+                order: [['shelf_location', 'ASC']]
+            });
+            const shelves = shelvesRaw.map(s => s.location);
+
+            // 6. RENDER VIEW (PENTING: Kirim objek pagination)
+            res.render("admin/shelf_management", {
+                title: "Manajemen Lokasi Rak",
+                books,
+                categories,
+                subjects,
+                years,
+                shelves,
+                query: req.query,
+                // --- INI YANG MENYEBABKAN ERROR JIKA HILANG ---
+                pagination: {
+                    currentPage,
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    limit
+                }
+                // ----------------------------------------------
+            });
+
+        } catch (err) {
+            console.error("Shelf Management Error:", err);
+            res.status(500).send("Gagal memuat halaman: " + err.message);
+        }
+    },
+    bulkUpdateShelf: async (req, res) => {
+        try {
+            // isSelectAll: boolean, true jika user centang "Pilih Semua"
+            // filterParams: object, berisi { q, category, subject, year, shelf }
+            const { bookIds, newLocation, isSelectAll, filterParams } = req.body;
+
+            if (!newLocation) {
+                return res.status(400).json({ success: false, message: "Lokasi baru tidak valid." });
+            }
+
+            let affectedCount = 0;
+
+            if (isSelectAll && filterParams) {
+                // === MODE: UPDATE SELURUH HASIL FILTER ===
+                // Kita harus menyusun ulang query WHERE yang sama persis dengan halaman pencarian
+                
+                const { q, category, subject, year, shelf } = filterParams;
+                const whereCondition = {};
+                const includeOptions = []; 
+
+                // 1. Replikasi Filter Kategori & Tahun
+                if (category) whereCondition.category_id = category;
+                if (year) whereCondition.publish_year = year;
+
+                // 2. Replikasi Filter Lokasi Rak
+                if (shelf) {
+                    if (shelf === 'unassigned') {
+                        whereCondition.shelf_location = { 
+                            [Op.or]: [{ [Op.eq]: null }, { [Op.eq]: "" }, { [Op.eq]: "-" }] 
+                        };
+                    } else {
+                        whereCondition.shelf_location = shelf;
+                    }
+                }
+
+                // 3. Replikasi Filter Subjek (Butuh Include)
+                if (subject) {
+                    includeOptions.push({
+                        model: Subject, as: 'Subjects', where: { id: subject }, required: true
+                    });
+                }
+                
+                // 4. Replikasi Search Keyword (Butuh Include BookCopy jika cari no induk)
+                // Kita include BookCopy hanya untuk filtering, attributes kosong agar ringan
+                includeOptions.push({ model: BookCopy, as: 'copies', attributes: [], required: false });
+
+                if (q && q.trim() !== "") {
+                    const keyword = `%${q.trim()}%`;
+                    whereCondition[Op.and] = [
+                        ...(whereCondition[Op.and] || []),
+                        {
+                            [Op.or]: [
+                                { title: { [Op.like]: keyword } },
+                                { isbn: { [Op.like]: keyword } },
+                                { call_number: { [Op.like]: keyword } },
+                                { '$copies.no_induk$': { [Op.like]: keyword } }
+                            ]
+                        }
+                    ];
+                }
+
+                // EKSEKUSI UPDATE
+                // Karena MySQL tidak support update dengan join yang kompleks secara langsung di Sequelize,
+                // Cara teraman: Ambil semua ID dulu, lalu Update berdasarkan ID.
+                
+                // A. Ambil semua ID buku yang cocok filter
+                const booksToUpdate = await Book.findAll({
+                    where: whereCondition,
+                    include: includeOptions,
+                    attributes: ['id'],
+                    subQuery: false, // Penting agar filter $copies.no_induk$ jalan
+                    distinct: true
+                });
+
+                const allIds = booksToUpdate.map(b => b.id);
+
+                if (allIds.length === 0) {
+                    return res.status(400).json({ success: false, message: "Tidak ada data yang cocok untuk diupdate." });
+                }
+
+                // B. Update Massal
+                const [updateCount] = await Book.update(
+                    { shelf_location: newLocation },
+                    { where: { id: { [Op.in]: allIds } } }
+                );
+                affectedCount = updateCount;
+
+            } else {
+                // === MODE: UPDATE MANUAL (CHECKBOX DIPILIH SATU-SATU) ===
+                if (!bookIds || !Array.isArray(bookIds) || bookIds.length === 0) {
+                    return res.status(400).json({ success: false, message: "Tidak ada buku yang dipilih." });
+                }
+
+                const [updateCount] = await Book.update(
+                    { shelf_location: newLocation },
+                    { where: { id: { [Op.in]: bookIds } } }
+                );
+                affectedCount = updateCount;
+            }
+
+            return res.status(200).json({ 
+                success: true, 
+                message: `Berhasil memindahkan ${affectedCount} buku ke ${newLocation}.` 
+            });
+
+        } catch (err) {
+            console.error("Bulk Update Shelf Error:", err);
+            res.status(500).json({ success: false, message: "Terjadi kesalahan server: " + err.message });
         }
     }
 };
