@@ -7,7 +7,7 @@
             // Ambil shelfLocation dari parameter (untuk highlight awal jika ada)
             let shelfRaw = typeof shelfLocation !== 'undefined' ? shelfLocation : '';
             // Normalisasi: hapus prefix "Rak " jika ada, ubah ke uppercase
-            let shelf = shelfRaw.replace(/^Rak\s*/i, '').trim().toUpperCase();
+            let shelf = shelfRaw.replace(/['"]+/g, '').replace(/^Rak\s*/i, '').trim().toUpperCase();
             
             // Fungsi untuk cek apakah rak ini adalah lokasi buku
             function isBookRack(rackId, rackId2) {
@@ -567,6 +567,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update nilai input field
                 inputField.value = e.detail.value;
                 console.log('📢 Input field di-update dari:', oldValue, 'ke:', e.detail.value);
+                
+                let valueToClean = e.detail.value.replace(/['"]+/g, '').trim();
                 
                 // Pastikan format benar
                 let valueToUse = e.detail.value.trim();

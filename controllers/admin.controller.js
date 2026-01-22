@@ -182,6 +182,32 @@ const toTitleCase = (str) => {
     }).join(' ');
 };
 
+// Tambahkan Fungsi Standardisasi Lokasi Rak
+const standardizeShelfLocation = (rawLocation) => {
+    if (!rawLocation) return null;
+    
+    // 1. Ubah ke string
+    let loc = String(rawLocation);
+    
+    // 2. Hapus tanda kutip ganda/tunggal, trim spasi
+    loc = loc.replace(/['"]+/g, '').trim();
+    
+    // 3. Cek pola (misal: "A1" atau "a1")
+    // Jika formatnya hanya huruf+angka (contoh: A1, B2), tambahkan prefix "Rak "
+    if (loc.match(/^[A-H][1-9]$/i)) {
+        return `Rak ${loc.toUpperCase()}`;
+    }
+    
+    // 4. Jika formatnya sudah "Rak A1" tapi huruf kecil atau spasi aneh
+    const match = loc.match(/^Rak\s*([A-H][1-9])$/i);
+    if (match) {
+        return `Rak ${match[1].toUpperCase()}`;
+    }
+
+    // Jika tidak sesuai pola (misal: "Gudang"), kembalikan apa adanya (tapi tanpa kutip)
+    return loc;
+};
+
 
 module.exports = {
     listBooks: async (req, res) => {
@@ -516,7 +542,7 @@ module.exports = {
                     isbn: row.getCell(6).text,
                     call_number: row.getCell(7).text,
                     language: row.getCell(8).text,
-                    shelf_location: row.getCell(9).text,
+                    shelf_location: standardizeShelfLocation(rawShelf),
                     categoryName: row.getCell(10).text,
                     authorsPenulis: row.getCell(11).text,
                     authorsEditor: row.getCell(12).text,
@@ -829,6 +855,8 @@ module.exports = {
                 categoryId = newCategory.id;
             }
 
+            const cleanShelfLocation = standardizeShelfLocation(data.shelf_location);
+
             // 2. CREATE BUKU DULU (PENTING: Variabel 'book' harus dibuat dulu)
             const book = await Book.create({
                 title: toTitleCase(data.title),
@@ -841,7 +869,7 @@ module.exports = {
                 abstract: data.abstract,
                 notes: data.notes,
                 language: data.language,
-                shelf_location: data.shelf_location,
+                shelf_location: cleanShelfLocation,
                 category_id: categoryId,
                 image: req.file ? req.file.filename : null
             });
@@ -1069,6 +1097,8 @@ module.exports = {
                 console.log(`  ✓ Tidak ada perubahan gambar, pertahankan gambar lama`);
             }
 
+            const cleanShelfLocation = standardizeShelfLocation(data.shelf_location);
+
             // 4. Update Data Utama Buku
             const updateData = {
                 title: toTitleCase(data.title),
@@ -1081,7 +1111,7 @@ module.exports = {
                 abstract: data.abstract,
                 notes: data.notes,
                 language: data.language,
-                shelf_location: data.shelf_location,
+                shelf_location: cleanShelfLocation,
                 category_id: categoryId
             };
             
@@ -1408,7 +1438,9 @@ module.exports = {
         try {
             // isSelectAll: boolean, true jika user centang "Pilih Semua"
             // filterParams: object, berisi { q, category, subject, year, shelf }
-            const { bookIds, newLocation, isSelectAll, filterParams } = req.body;
+            const { bookIds, newLocation: rawLocation, isSelectAll, filterParams } = req.body;
+
+            const newLocation = standardizeShelfLocation(rawLocation);
 
             if (!newLocation) {
                 return res.status(400).json({ success: false, message: "Lokasi baru tidak valid." });

@@ -10,7 +10,7 @@
             // Ambil shelfLocation dari parameter
             let shelfRaw = shelfLocation || '';
             // Normalisasi: hapus prefix "Rak " jika ada, ubah ke uppercase
-            let shelf = shelfRaw.replace(/^Rak\s*/i, '').trim().toUpperCase();
+            let shelf = shelfRaw.replace(/['"]+/g, '').replace(/^Rak\s*/i, '').trim().toUpperCase();
             
             // Fungsi untuk cek apakah rak ini adalah lokasi buku
             function isBookRack(rackId, rackId2) {
