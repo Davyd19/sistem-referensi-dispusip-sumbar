@@ -10,5 +10,6 @@ exports.isAdminLoggedIn = (req, res, next) => {
         return res.status(403).send("Akses ditolak");
     }
 
+    req.user = req.session.user; // 🔑 penting
     next();
 };

@@ -257,7 +257,7 @@
                 <% if (books.length > 0) { %>
                     <% books.forEach(book => { %>
                         <a 
-                                        href="/book/<%= book.id %>?origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>"
+                                        href="/books/detail/<%= book.id %>?origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>"
                                         class="block bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 flex flex-row gap-3 group cursor-pointer active:scale-[0.98] overflow-hidden sm:rounded-lg sm:border-gray-200 sm:hover:border-blue-400 sm:hover:shadow-md sm:transition sm:active:scale-100 sm:p-4 sm:gap-4 p-3"
                             >
                                         <!-- Cover - Compact untuk mobile, normal untuk desktop -->

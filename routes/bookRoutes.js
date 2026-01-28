@@ -8,6 +8,6 @@ const detailController = require("../controllers/detail.controller");
 router.get(["/", "/search"], searchPageController.indexPage);
 
 // DETAIL BUKU
-router.get("/book/:id", detailController.getDetailPage);
+router.get("/detail/:id", detailController.getDetailPage);
 
 module.exports = router;
