@@ -25,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
             nama_ruangan: {
                 type: DataTypes.STRING,
                 allowNull: false
+            },
+            layout_json: {
+                type: DataTypes.JSON,
+                allowNull: true
             }
         },
         {

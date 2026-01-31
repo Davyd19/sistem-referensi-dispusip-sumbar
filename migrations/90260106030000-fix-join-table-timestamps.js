@@ -7,37 +7,39 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Normalisasi nilai zero-date jika ada
+    // Catatan: gunakan LIKE agar tidak memicu error "Incorrect datetime value"
+    // pada mode MySQL yang melarang '0000-00-00 00:00:00'
     await queryInterface.sequelize.query(`
       UPDATE BookAuthors 
       SET createdAt = NOW() 
-      WHERE createdAt IS NULL OR createdAt = '0000-00-00 00:00:00';
+      WHERE createdAt IS NULL OR CAST(createdAt AS CHAR) LIKE '0000-00-00%';
     `);
     await queryInterface.sequelize.query(`
       UPDATE BookAuthors 
       SET updatedAt = NOW() 
-      WHERE updatedAt IS NULL OR updatedAt = '0000-00-00 00:00:00';
+      WHERE updatedAt IS NULL OR CAST(updatedAt AS CHAR) LIKE '0000-00-00%';
     `);
 
     await queryInterface.sequelize.query(`
       UPDATE BookPublishers 
       SET createdAt = NOW() 
-      WHERE createdAt IS NULL OR createdAt = '0000-00-00 00:00:00';
+      WHERE createdAt IS NULL OR CAST(createdAt AS CHAR) LIKE '0000-00-00%';
     `);
     await queryInterface.sequelize.query(`
       UPDATE BookPublishers 
       SET updatedAt = NOW() 
-      WHERE updatedAt IS NULL OR updatedAt = '0000-00-00 00:00:00';
+      WHERE updatedAt IS NULL OR CAST(updatedAt AS CHAR) LIKE '0000-00-00%';
     `);
 
     await queryInterface.sequelize.query(`
       UPDATE BookSubjects 
       SET createdAt = NOW() 
-      WHERE createdAt IS NULL OR createdAt = '0000-00-00 00:00:00';
+      WHERE createdAt IS NULL OR CAST(createdAt AS CHAR) LIKE '0000-00-00%';
     `);
     await queryInterface.sequelize.query(`
       UPDATE BookSubjects 
       SET updatedAt = NOW() 
-      WHERE updatedAt IS NULL OR updatedAt = '0000-00-00 00:00:00';
+      WHERE updatedAt IS NULL OR CAST(updatedAt AS CHAR) LIKE '0000-00-00%';
     `);
 
     // Tambahkan default CURRENT_TIMESTAMP

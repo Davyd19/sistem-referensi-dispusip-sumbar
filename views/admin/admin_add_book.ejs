@@ -178,7 +178,7 @@
                     </p>
                     <!-- Include map interaktif di dalam popup -->
                     <div id="shelf-map-popup-container" class="flex justify-center">
-                        <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true }) %>
+                        <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true, layoutJson: typeof layoutJson !== 'undefined' ? layoutJson : null, shelfLocation: '' }) %>
                     </div>
                 </div>
                 <!-- Footer Modal -->
@@ -347,15 +347,6 @@
             console.log('🖱️ Tombol Tambah Lokasi diklik!');
             // Simpan nilai saat ini sebagai nilai sementara
             tempShelfLocation = shelfLocationInput.value || '';
-            
-            // Pastikan format nilai benar (jika hanya "C1", tambahkan "Rak ")
-            if (tempShelfLocation && !tempShelfLocation.match(/^Rak\s+/i)) {
-                const match = tempShelfLocation.match(/^([A-H][12])$/i);
-                if (match) {
-                    tempShelfLocation = 'Rak ' + match[1];
-                    shelfLocationInput.value = tempShelfLocation;
-                }
-            }
             
             shelfMapModal.classList.remove('hidden');
             shelfMapModal.classList.add('flex');

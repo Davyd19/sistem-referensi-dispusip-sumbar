@@ -1,183 +1,137 @@
 <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
     <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
         <h3 class="font-bold text-gray-700 flex items-center">
-            <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i> Denah Ruangan Referensi
+            <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i> Denah Ruangan
         </h3>
     </div>
-    
-    <div class="p-6">
+
+    <div class="p-6 overflow-auto max-h-[min(80vh,900px)]">
         <% 
-            // Ambil shelfLocation dari parameter
             let shelfRaw = shelfLocation || '';
-            // Normalisasi: hapus prefix "Rak " jika ada, ubah ke uppercase
-            let shelf = shelfRaw.replace(/['"]+/g, '').replace(/^Rak\s*/i, '').trim().toUpperCase();
-            
-            // Fungsi untuk cek apakah rak ini adalah lokasi buku
-            function isBookRack(rackId, rackId2) {
-                if (!shelf) return false;
-                const shelfUpper = shelf.toUpperCase();
-                return shelfUpper === rackId.toUpperCase() || (rackId2 && shelfUpper === rackId2.toUpperCase());
-            }
+            // Simpan & cocokkan berdasarkan nama rak persis (toleran legacy "Rak X" vs "X")
+            const normKey = (v) => String(v || '').replace(/['"]+/g, '').trim().replace(/\s/g,'').toUpperCase();
+            const shelfKey = normKey(shelfRaw);
+            const shelfKeyNoRak = normKey(String(shelfRaw || '').replace(/^Rak\s+/i, ''));
+            // Check if we have dynamic layout JSON
+            let hasDynamicLayout=false; let dRows=12;
+            let dCols=16; let dItems=[]; if (layoutJson) { try { // Handle if layoutJson is string or object const
+            lData=typeof layoutJson==='string' ? JSON.parse(layoutJson) : layoutJson; if (lData && lData.items) {
+            hasDynamicLayout=true; dRows=lData.rows || 12; dCols=lData.cols || 16; dItems=lData.items || []; } }
+            catch(e) { console.error("Error parsing layout JSON", e); } } %>
 
-            // --- LAYOUT DATA ---
-            const layoutData = [
-                // --- 1. AREA ATAS KIRI ---
-                { id: 'cab1', type: 'cabinet', label: '', x: 2, y: 3, w: 5, h: 4, color: 'bg-gray-300' },
-                { id: 'cab2', type: 'cabinet', label: '', x: 2, y: 8, w: 5, h: 4, color: 'bg-gray-300' },
-                
-                // Meja hijau toska vertikal (di bawah kabinet)
-                { id: 'desk_left_top', type: 'desk', label: '', x: 3, y: 16, w: 4, h: 12, color: 'bg-teal-400' },
+            <% if (hasDynamicLayout) { %>
+                <!-- DYNAMIC GRID LAYOUT -->
+                <div class="relative w-full">
+                    <!-- Grid Container -->
+                    <div style="
+                    display: grid;
+                    grid-template-columns: repeat(<%= dCols %>, minmax(0, 1fr));
+                    grid-template-rows: repeat(<%= dRows %>, minmax(0, 1fr));
+                    gap: clamp(2px, 0.6vw, 4px);
+                    aspect-ratio: <%= dCols %> / <%= dRows %>;
+                    width: 100%;
+                    background-color: #f9fafb;
+                    padding: clamp(6px, 1.2vw, 10px);
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                ">
+                        <!-- ITEMS OVERLAY (tanpa background kotak-kotak) -->
+                        <% dItems.forEach(item=> {
+                                            // Determine styling based on type
+                                            let bgClass = 'bg-gray-300';
+                                            let borderClass = 'border-gray-400';
+                                            let textClass = 'text-gray-700';
 
-                // Meja Pustakawan
-                { id: 'lib_desk', type: 'desk', label: '', x: 13, y: 8, w: 22, h: 7, color: 'bg-teal-400' },
+                                            if (item.type === 'table') {
+                                            bgClass = 'bg-red-400';
+                                            borderClass = 'border-red-500';
+                                            textClass = 'text-white';
+                                            if (item.role === 'librarian' || (item.name && item.name.match(/pustakawan|admin/i))) { 
+                                                bgClass = 'bg-teal-400'; 
+                                                borderClass = 'border-teal-500'; 
+                                            }
+                                            if (item.role === 'guest' || (item.name && item.name.match(/tamu/i))) { 
+                                                bgClass = 'bg-green-400';
+                                                borderClass = 'border-green-500'; 
+                                            }
+                                            } else if (item.type === 'door') {
+                                            bgClass = 'bg-orange-400';
+                                            borderClass = 'border-orange-500';
+                                            textClass = 'text-white';
+                                            } else if (item.type === 'cabinet') {
+                                            bgClass = 'bg-gray-400';
+                                            borderClass = 'border-gray-500';
+                                            textClass = 'text-white';
+                                            } else if (item.type === 'rack') {
+                                            // Highlight tepat 1 rak sesuai shelf_location (toleran legacy "Rak X")
+                                            const nameKey = normKey(item.name);
+                                            const nameKeyNoRak = normKey(String(item.name || '').replace(/^Rak\s+/i, ''));
+                                            const isTarget = shelfKey && (
+                                                nameKey === shelfKey ||
+                                                (shelfKeyNoRak && nameKeyNoRak === shelfKeyNoRak)
+                                            );
 
-                // --- 2. SIDEBAR KIRI (MEJA PENGUNJUNG VERTIKAL) ---
-                { id: 'visit_v_1', type: 'desk', label: '', x: 2, y: 35, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-                { id: 'visit_v_2', type: 'desk', label: '', x: 2, y: 50, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-                { id: 'visit_v_3', type: 'desk', label: '', x: 2, y: 65, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-
-                // --- 3. POJOK KIRI BAWAH (MEJA PENGUNJUNG HORIZONTAL) ---
-                { id: 'visit_h_1', type: 'desk', label: '', x: 2, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-                { id: 'visit_h_2', type: 'desk', label: '', x: 13, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-                { id: 'visit_h_3', type: 'desk', label: '', x: 24, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-
-                // --- 4. TENGAH RUANGAN ---
-                { id: 'center_1', type: 'desk', label: '', x: 45, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                { id: 'center_2', type: 'desk', label: '', x: 59, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                { id: 'center_3', type: 'desk', label: '', x: 73, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                
-                // Meja Buku Tamu (Hijau)
-                { id: 'guest_book', type: 'desk', label: '', x: 38, y: 65, w: 6, h: 6, color: 'bg-green-400' },
-
-                // --- 5. POJOK KANAN BAWAH (KOTAK MERAH) ---
-                { id: 'corner_red', type: 'desk', label: '', x: 85, y: 85, w: 8, h: 8, color: 'bg-red-400' }
-            ];
-
-            // --- LOGIKA RAK BUKU ---
-            const rackStartX = 45; 
-            const rackWidth = 4;
-            const rackGap = 1.2;   
-            
-            // A. RAK ATAS (8 Kolom: A1-H1)
-            const topLabels = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
-            for (let i = 0; i < 8; i++) {
-                const currentX = rackStartX + (i * (rackWidth + rackGap));
-                const label = topLabels[i];
-                
-                layoutData.push({ 
-                    id: `rack_top_${i}`, type: 'rack', label: label, 
-                    x: currentX, y: 5, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
-            }
-
-            // B. RAK BAWAH (8 Kolom: A2-H2)
-            const bottomLabels = ['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2'];
-            
-            // 4 Rak gabungan pertama (A2-D2)
-            for (let i = 0; i < 4; i++) {
-                const currentX = rackStartX + (i * (rackWidth + rackGap));
-                const label = bottomLabels[i];
-                layoutData.push({ 
-                    id: `rack_bot_${i}`, type: 'rack', label: label, 
-                    x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
-            }
-
-            // Rak E2 (gap)
-            const gapRackX = rackStartX + (4 * (rackWidth + rackGap));
-            layoutData.push({ 
-                id: 'rack_gap', type: 'rack', label: 'E2', 
-                x: gapRackX, y: 77, w: rackWidth, h: 12, color: 'bg-gray-300', 
-                verticalText: true, rackId: 'E2'
-            });
-
-            // 2 Rak gabungan setelah E2 (F2, G2)
-            for (let i = 0; i < 2; i++) {
-                const currentX = rackStartX + ((5 + i) * (rackWidth + rackGap));
-                const label = bottomLabels[5 + i];
-                layoutData.push({ 
-                    id: `rack_bot_${5 + i}`, type: 'rack', label: label, 
-                    x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
-            }
-
-            // C. RAK VERTIKAL POJOK KANAN (H2)
-            layoutData.push({ 
-                id: 'rack_right_combined', type: 'rack', label: 'H2', 
-                x: 88, y: 55, w: 4, h: 24, color: 'bg-gray-300', 
-                verticalText: true, rackId: 'H2'
-            });
-        %>
-
-        <div class="relative w-full aspect-[16/9] bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden">
-            
-            <% layoutData.forEach(item => { 
-                const isHighlighted = item.type === 'rack' && item.rackId && isBookRack(item.rackId, item.rackId2);
-                
-                // === LOGIKA HIGHLIGHT (BIRU) ===
-                // Jika aktif: Gunakan warna Biru (blue-600), shadow biru, border biru tua
-                const finalColor = isHighlighted ? 'bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.6)] z-10' : item.color;
-                const textColor = isHighlighted ? 'text-white' : (item.type === 'desk' ? 'text-white' : 'text-gray-700');
-                const borderColor = isHighlighted ? 'border-blue-800 border-2' : 'border-gray-500/30 border';
-            %>
-                <div 
-                    class="absolute flex items-center justify-center rounded-sm transition-transform hover:scale-105 cursor-default p-0 <%= finalColor %> <%= textColor %> <%= borderColor %>"
-                    style="
-                        left: <%= item.x %>%;
-                        top: <%= item.y %>%;
-                        width: <%= item.w %>%;
-                        height: <%= item.h %>%;
-                    "
-                >
-                    <% if (item.type === 'rack' && item.label) { %>
-                        <span 
-                            class="text-[7px] md:text-[8px] font-bold text-center leading-none tracking-tighter overflow-hidden w-full"
-                            style="
-                                writing-mode: <%= item.verticalText ? 'vertical-rl' : 'horizontal-tb' %>;
-                                transform: <%= item.verticalText ? 'rotate(180deg)' : 'none' %>;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 100%;
-                                height: 100%;
-                                padding: 1px;
-                            "
-                        >
-                            <%= item.label %>
-                        </span>
-                    <% } %>
+                                            if (isTarget) {
+                                            bgClass = 'bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.6)] z-20';
+                                            borderClass = 'border-blue-800';
+                                            textClass = 'text-white';
+                                            }
+                                            }
+                                            %>
+                                            <div style="
+                            grid-column: <%= item.c1 %> / span <%= item.c2 - item.c1 + 1 %>;
+                            grid-row: <%= item.r1 %> / span <%= item.r2 - item.r1 + 1 %>;
+                            z-index: 10;
+                        " class="relative flex items-center justify-center p-1 rounded-sm border shadow-sm transition-transform hover:scale-105 <%= bgClass %> <%= borderClass %>">
+                                                <span
+                                                    class="<%= textClass %> text-[9px] font-bold text-center leading-tight overflow-hidden break-words px-0.5">
+                                                        <%= item.type === 'rack' ? (item.name || '') : '' %>
+                                                </span>
+                                            </div>
+                                            <% }); %>
+                    </div>
                 </div>
-            <% }); %>
-            
-        </div>
-        
-        <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div> 
-                <span>Rak Buku</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-teal-400 border border-gray-400"></div> 
-                <span>Meja Pustakawan</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-red-400 border border-gray-400"></div> 
-                <span>Meja Pengunjung</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-green-400 border border-gray-400"></div> 
-                <span>Meja Buku Tamu</span>
-            </div>
-            <% if (shelf) { %>
-                <div class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200">
-                    <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div> 
-                    <span class="text-blue-800 font-bold">Lokasi Buku (<%= shelf %>)</span>
+
+                <div class="mt-4 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div>
+                        <span>Rak Buku</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-teal-400 border border-gray-400"></div>
+                        <span>Meja Petugas</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-red-400 border border-gray-400"></div>
+                        <span>Meja Pengunjung</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-orange-400 border border-gray-400"></div>
+                        <span>Pintu</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-green-400 border border-gray-400"></div>
+                        <span>Meja Buku Tamu</span>
+                    </div>
+                    <% if (shelfKey) { %>
+                        <div class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200">
+                            <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div>
+                            <span class="text-blue-800 font-bold">Lokasi Buku (<%= shelfRaw %>)</span>
+                        </div>
+                        <% } %>
                 </div>
-            <% } %>
-        </div>
-        
+
+                <% } else { %>
+                    <div class="flex flex-col items-center justify-center min-h-[200px] text-gray-500 px-4 py-8 rounded-lg border border-gray-200 bg-gray-50">
+                        <p class="text-sm font-medium mb-1">Denah tidak tersedia</p>
+                        <p class="text-xs">Ruangan ini belum punya denah dari database.</p>
+                        <% if (shelfKey) { %>
+                            <div class="mt-4 flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-200">
+                                <span class="text-blue-800 font-bold">Lokasi Buku: <%= shelfRaw %></span>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } %>
+
     </div>
 </div>

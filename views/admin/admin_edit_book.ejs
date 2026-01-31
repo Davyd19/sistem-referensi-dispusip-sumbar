@@ -212,7 +212,7 @@
             </p>
             <!-- Include map interaktif di dalam popup -->
             <div id="shelf-map-popup-container" class="flex justify-center">
-                <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true }) %>
+                <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true, layoutJson: typeof layoutJson !== 'undefined' ? layoutJson : null, shelfLocation: (book && book.shelf_location) ? book.shelf_location : '' }) %>
             </div>
         </div>
         <!-- Footer Modal -->
@@ -483,15 +483,10 @@
             return false;
         }
         
-        // Ekstrak rak ID dari format "Rak A1" atau "A1"
-        const match = value.trim().match(/Rak\s*([A-H][12])/i) || value.trim().match(/^([A-H][12])$/i);
-        if (!match || !match[1]) {
-            console.error('Tidak ada rak ID yang cocok untuk nilai:', value);
-            return false;
-        }
-        
-        const rackId = match[1].toUpperCase().trim();
-        console.log('Mencari rak dengan ID (trimmed & uppercase):', rackId, '| Length:', rackId.length);
+        const raw = String(value).replace(/['"]+/g, '').trim();
+        if (!raw) return false;
+        const noRak = raw.replace(/^Rak\s+/i, '').trim();
+        const candidates = Array.from(new Set([raw, noRak].filter(Boolean)));
         
         const allRacks = mapContainer.querySelectorAll('[data-rack-id]');
         console.log('Jumlah rak ditemukan:', allRacks.length);
@@ -515,12 +510,10 @@
             if (currentRackId) {
                 currentRackId = currentRackId.replace(/^["']+|["']+$/g, '').trim();
             }
-            // Pastikan trim dan uppercase untuk perbandingan yang benar
-            const currentRackIdClean = currentRackId ? currentRackId.toUpperCase() : '';
-            const rackIdClean = rackId.trim().toUpperCase();
-            const isSelected = currentRackIdClean === rackIdClean;
+            const currentRackIdClean = currentRackId ? currentRackId.replace(/\s/g,'').toUpperCase() : '';
+            const isSelected = candidates.some(c => c.replace(/\s/g,'').toUpperCase() === currentRackIdClean);
             
-            console.log(`Rak ${index + 1}: ID = "${rack.getAttribute('data-rack-id')}" (cleaned: "${currentRackIdClean}"), mencari: "${rackIdClean}", isSelected = ${isSelected}`);
+            console.log(`Rak ${index + 1}: ID = "${rack.getAttribute('data-rack-id')}" (cleaned: "${currentRackIdClean}"), candidates: ${JSON.stringify(candidates)}, isSelected = ${isSelected}`);
             
             if (isSelected) {
                 found = true;
@@ -566,12 +559,12 @@
             const indicator = document.getElementById('selected-rack-indicator');
             const label = document.getElementById('selected-rack-label');
             if (indicator && label) {
-                label.textContent = rackId;
+                label.textContent = candidates[0];
                 indicator.classList.remove('hidden');
-                console.log('✓ Indicator di-update ke', rackId);
+                console.log('✓ Indicator di-update ke', candidates[0]);
             }
         } else {
-            console.error('✗ Rak dengan ID', rackId, 'TIDAK DITEMUKAN!');
+            console.error('✗ Rak dengan value', raw, 'TIDAK DITEMUKAN!');
         }
         
         console.log('=== highlightRackDirectly SELESAI ===');
@@ -595,16 +588,6 @@
             console.log('=== TOMBOL TAMBAH LOKASI DIKLIK ===');
             console.log('Nilai awal dari input:', tempShelfLocation);
             console.log('userHasClickedNewRack di-reset ke: false');
-            
-            // Pastikan format nilai benar (jika hanya "C1", tambahkan "Rak ")
-            if (tempShelfLocation && !tempShelfLocation.match(/^Rak\s+/i)) {
-                const match = tempShelfLocation.match(/^([A-H][12])$/i);
-                if (match) {
-                    tempShelfLocation = 'Rak ' + match[1];
-                    shelfLocationInput.value = tempShelfLocation;
-                    console.log('Nilai di-format ulang ke:', tempShelfLocation);
-                }
-            }
             
             shelfMapModal.classList.remove('hidden');
             shelfMapModal.classList.add('flex');

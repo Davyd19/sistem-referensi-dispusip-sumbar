@@ -19,7 +19,8 @@ module.exports = {
                 title: 'Kelola Ruangan',
                 rooms,
                 user: req.session.user,
-                active: 'rooms'
+                active: 'rooms',
+                query: req.query
             });
         } catch (err) {
             console.error(err);
@@ -32,7 +33,8 @@ module.exports = {
         res.render('super-admin/room_add', {
             title: 'Tambah Ruangan Baru',
             user: req.session.user,
-            error: null
+            error: null,
+            query: req.query
         });
     },
 
@@ -41,7 +43,7 @@ module.exports = {
         const t = await sequelize.transaction(); // Mulai transaksi database
         
         try {
-            const { nama_ruangan, username, password } = req.body;
+            const { nama_ruangan, username, password, layout_json } = req.body;
 
             // Validasi sederhana
             if (!nama_ruangan || !username || !password) {
@@ -50,6 +52,20 @@ module.exports = {
                     user: req.session.user,
                     error: "Semua kolom wajib diisi!"
                 });
+            }
+
+            // Parse & validasi sederhana layout (opsional)
+            let parsedLayout = null;
+            if (layout_json && String(layout_json).trim()) {
+                try {
+                    parsedLayout = JSON.parse(layout_json);
+                } catch (e) {
+                    return res.render('super-admin/room_add', {
+                        title: 'Tambah Ruangan',
+                        user: req.session.user,
+                        error: "Format desain ruangan tidak valid (JSON rusak)."
+                    });
+                }
             }
 
             // Cek apakah username sudah ada
@@ -73,7 +89,8 @@ module.exports = {
             // B. Buat Ruangan yang terhubung ke User tersebut
             await Ruangan.create({
                 nama_ruangan,
-                id_admin_ruangan: newUser.id
+                id_admin_ruangan: newUser.id,
+                layout_json: parsedLayout
             }, { transaction: t });
 
             // Commit transaksi jika sukses
@@ -97,6 +114,7 @@ module.exports = {
     showEdit: async (req, res) => {
         try {
             const room = await Ruangan.findByPk(req.params.id, {
+                attributes: ['id_ruangan', 'nama_ruangan', 'id_admin_ruangan', 'layout_json'],
                 include: [{ model: User, as: 'admin' }]
             });
 
@@ -106,7 +124,8 @@ module.exports = {
                 title: 'Edit Ruangan',
                 room,
                 user: req.session.user,
-                error: null
+                error: null,
+                query: req.query
             });
         } catch (err) {
             console.error(err);
@@ -119,13 +138,22 @@ module.exports = {
         const t = await sequelize.transaction();
         try {
             const { id } = req.params;
-            const { nama_ruangan, username, new_password } = req.body;
+            const { nama_ruangan, username, new_password, layout_json } = req.body;
 
             const room = await Ruangan.findByPk(id, { include: ['admin'] });
             if (!room) return res.status(404).send("Ruangan tidak ditemukan");
 
-            // Update Info Ruangan
-            await room.update({ nama_ruangan }, { transaction: t });
+            // Parse & validasi layout (opsional). Hanya update layout jika ada JSON valid.
+            const roomUpdate = { nama_ruangan };
+            if (layout_json != null && String(layout_json).trim() !== '') {
+                try {
+                    roomUpdate.layout_json = JSON.parse(layout_json);
+                } catch (e) {
+                    return res.redirect(`/admin/rooms/edit/${id}?error=layout`);
+                }
+            }
+
+            await room.update(roomUpdate, { transaction: t });
 
             // Update Info Admin (User)
             const updateData = { username };

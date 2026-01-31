@@ -1,7 +1,7 @@
 <%- include('partials/header') %>
 
 <div class="p-6 flex justify-center">
-    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+    <div class="w-full max-w-[1600px] bg-white rounded-xl shadow-lg border border-gray-100 overflow-visible">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-xl font-bold text-gray-800">
                 <i class="fas fa-edit text-orange-500 mr-2"></i> Edit Ruangan
@@ -10,11 +10,87 @@
         </div>
 
         <form action="/admin/rooms/edit/<%= room.id_ruangan %>" method="POST" class="p-6 space-y-6">
-            
+            <% if (typeof query !== 'undefined' && query.error === 'layout') { %>
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                    <p>Desain ruangan tidak tersimpan karena formatnya tidak valid. Coba ulangi desainnya.</p>
+                </div>
+            <% } %>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Nama Ruangan</label>
                 <input type="text" name="nama_ruangan" required value="<%= room.nama_ruangan %>"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition">
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div class="flex flex-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-800 mb-1 flex items-center">
+                            <i class="fas fa-th mr-2 text-indigo-600"></i> Desain Tata Letak Ruangan
+                        </h3>
+                        <p class="text-xs text-gray-600">
+                            Pilih jenis item, blok area di grid, beri nama. Area jadi satu kotak + nama di denah. Klik item untuk hapus; klik-tahan & geser untuk pindah.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap gap-2" id="modeButtonsWrap">
+                            <button type="button" id="btnAddRack" data-mode="add_rack"
+                                class="mode-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-plus mr-1"></i>Rak
+                            </button>
+                            <button type="button" id="btnAddVisitorTable" data-mode="add_table_visitor"
+                                class="mode-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-users mr-1"></i>Meja Pengunjung
+                            </button>
+                            <button type="button" id="btnAddLibrarianTable" data-mode="add_table_librarian"
+                                class="mode-btn bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-user-tie mr-1"></i>Meja Pustakawan
+                            </button>
+                            <button type="button" id="btnAddGuestTable" data-mode="add_table_guest"
+                                class="mode-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-book-open mr-1"></i>Meja Buku Tamu
+                            </button>
+                            <button type="button" id="btnAddDoor" data-mode="add_door"
+                                class="mode-btn bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-door-open mr-1"></i>Pintu
+                            </button>
+                        </div>
+                        <button type="button" id="btnClearLayout"
+                            class="bg-white hover:bg-gray-100 text-gray-700 text-sm font-bold px-4 py-2 rounded-lg border border-gray-300 transition">
+                            <i class="fas fa-eraser mr-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-end gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Rows</label>
+                        <input id="roomRows" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.rows) ? room.layout_json.rows : 25 %>"
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Cols</label>
+                        <input id="roomCols" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.cols) ? room.layout_json.cols : 40 %>"
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                    </div>
+                    <div class="text-xs text-gray-500 max-w-md">
+                        <div class="font-medium text-gray-600 mb-0.5">Tips:</div>
+                        <ul class="list-disc list-inside space-y-0.5 text-gray-500">
+                            <li>Drag untuk pilih area, lalu isi nama. Klik item untuk hapus; klik-tahan & geser untuk pindah.</li>
+                            <li><b>Rak & meja</b> minimal 2×2 kotak.</li>
+                            <li><b>Pintu</b> minimal 1×2 atau 2×1 kotak (horizontal atau vertikal).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <input type="hidden" name="layout_json" id="layoutJsonInput" value="">
+
+                <div class="mt-4">
+                    <div id="denahViewport" class="rounded-xl border border-gray-200 bg-white overflow-auto p-3 max-w-full max-h-[min(90vh,960px)]">
+                        <div id="gridContainer" class="select-none inline-block"></div>
+                    </div>
+                    <p id="layoutStatus" class="text-xs text-gray-500 mt-2"></p>
+                </div>
             </div>
 
             <hr class="border-gray-200">
@@ -23,7 +99,6 @@
                 <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
                     <i class="fas fa-user-cog mr-2"></i> Update Akun Admin
                 </h3>
-                
                 <div class="grid grid-cols-1 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Username Admin</label>
@@ -32,7 +107,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru <span class="text-gray-400 font-normal">(Kosongkan jika tidak ingin mengubah)</span></label>
-                        <input type="password" name="new_password" placeholder="******" 
+                        <input type="password" name="new_password" placeholder="******"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none">
                     </div>
                 </div>
@@ -46,3 +121,535 @@
         </form>
     </div>
 </div>
+
+<!-- Modal (reusable): input nama / konfirmasi reset -->
+<div id="rdModalOverlay" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50 px-4">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
+            <h3 id="rdModalTitle" class="text-base font-extrabold text-gray-800">Modal</h3>
+            <button type="button" id="rdModalClose" class="text-gray-400 hover:text-gray-700 transition" aria-label="Tutup">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="px-5 py-4">
+            <p id="rdModalDesc" class="text-sm text-gray-600 mb-3 hidden"></p>
+            <div id="rdModalInputWrap">
+                <input id="rdModalInput" type="text"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                    placeholder="">
+                <p id="rdModalHint" class="text-xs text-gray-500 mt-2 hidden"></p>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" id="rdModalCancel"
+                    class="bg-white hover:bg-gray-100 text-gray-700 text-sm font-bold px-4 py-2 rounded-lg border border-gray-300 transition">
+                    Batal
+                </button>
+                <button type="button" id="rdModalOk"
+                    class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">
+                    Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.rd-grid { display: grid; gap: 6px; position: relative; }
+.rd-cell { width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; }
+.rd-cell:hover { outline: 2px solid rgba(99, 102, 241, 0.35); outline-offset: 0; }
+.rd-item { display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 2px solid; font-size: 10px; font-weight: 700; text-align: center; padding: 2px 4px; cursor: grab; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
+.rd-item:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.rd-item:active { cursor: grabbing; }
+.rd-item-label { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.2; word-break: break-word; }
+.rd-item--rack { background: rgba(16, 185, 129, 0.25); border-color: #059669; color: #064e3b; }
+.rd-item--table-visitor { background: rgba(248, 113, 113, 0.3); border-color: #dc2626; color: #7f1d1d; }
+.rd-item--table-librarian { background: rgba(45, 212, 191, 0.3); border-color: #0d9488; color: #134e4a; }
+.rd-item--table-guest { background: rgba(74, 222, 128, 0.3); border-color: #16a34a; color: #14532d; }
+.rd-item--door { background: rgba(249, 115, 22, 0.3); border-color: #ea580c; color: #7c2d12; }
+.rd-item--preview { opacity: 0.6; pointer-events: none; }
+.rd-selection { display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 2px dashed rgba(99, 102, 241, 0.8); background: rgba(99, 102, 241, 0.15); font-size: 10px; font-weight: 700; color: #3730a3; pointer-events: none; z-index: 5; }
+</style>
+
+<script>
+(() => {
+  const gridEl = document.getElementById('gridContainer');
+  const statusEl = document.getElementById('layoutStatus');
+  const layoutInput = document.getElementById('layoutJsonInput');
+  const rowsInput = document.getElementById('roomRows');
+  const colsInput = document.getElementById('roomCols');
+  const btnAddRack = document.getElementById('btnAddRack');
+  const btnAddVisitorTable = document.getElementById('btnAddVisitorTable');
+  const btnAddLibrarianTable = document.getElementById('btnAddLibrarianTable');
+  const btnAddGuestTable = document.getElementById('btnAddGuestTable');
+  const btnAddDoor = document.getElementById('btnAddDoor');
+  const btnClear = document.getElementById('btnClearLayout');
+
+  let _raw = <%- JSON.stringify(room.layout_json != null ? room.layout_json : null) %>;
+  const initial = (typeof _raw === 'string' ? (() => { try { return JSON.parse(_raw); } catch (e) { return null; } })() : _raw) || null;
+  const inferRoleFromName = (name) => {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('pustakawan')) return 'librarian';
+    if (n.includes('buku tamu') || n.includes('tamu')) return 'guest';
+    if (n.includes('pengunjung')) return 'visitor';
+    return 'visitor';
+  };
+  const normItems = (arr) => (Array.isArray(arr) ? arr : []).map(it => ({
+    id: it.id || `item_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    type: it.type || 'rack',
+    role: (it.role != null ? it.role : ((it.type === 'table') ? inferRoleFromName(it.name) : null)),
+    name: (it.name || '').trim() || 'Item',
+    r1: Number(it.r1) || 1,
+    c1: Number(it.c1) || 1,
+    r2: Number(it.r2) || 1,
+    c2: Number(it.c2) || 1
+  }));
+
+  const state = {
+    version: (initial && initial.version) || 1,
+    rows: (initial && initial.rows) ? Number(initial.rows) : 25,
+    cols: (initial && initial.cols) ? Number(initial.cols) : 40,
+    items: initial && initial.items ? normItems(initial.items) : []
+  };
+
+  rowsInput.value = String(state.rows);
+  colsInput.value = String(state.cols);
+
+  let mode = null;
+  let isMouseDown = false;
+  let dragStart = null, dragEnd = null;
+  let movingItemId = null, moveStartCell = null, dropTarget = null;
+  let isModalOpen = false;
+
+  const modal = {
+    overlay: document.getElementById('rdModalOverlay'),
+    title: document.getElementById('rdModalTitle'),
+    desc: document.getElementById('rdModalDesc'),
+    inputWrap: document.getElementById('rdModalInputWrap'),
+    input: document.getElementById('rdModalInput'),
+    hint: document.getElementById('rdModalHint'),
+    btnOk: document.getElementById('rdModalOk'),
+    btnCancel: document.getElementById('rdModalCancel'),
+    btnClose: document.getElementById('rdModalClose'),
+  };
+
+  const showModal = ({
+    title,
+    desc,
+    hint,
+    showInput = true,
+    placeholder,
+    defaultValue,
+    okText = 'Simpan',
+    okClass = 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300',
+    validate,
+  }) => {
+    return new Promise((resolve) => {
+      if (!modal.overlay) return resolve(null);
+
+      isModalOpen = true;
+      modal.title.textContent = title || 'Input';
+
+      if (desc) { modal.desc.textContent = desc; modal.desc.classList.remove('hidden'); }
+      else { modal.desc.textContent = ''; modal.desc.classList.add('hidden'); }
+
+      if (hint) { modal.hint.textContent = hint; modal.hint.classList.remove('hidden'); }
+      else { modal.hint.textContent = ''; modal.hint.classList.add('hidden'); }
+
+      if (modal.inputWrap) {
+        modal.inputWrap.classList.toggle('hidden', !showInput);
+      }
+
+      modal.input.placeholder = placeholder || '';
+      modal.input.value = defaultValue != null ? String(defaultValue) : '';
+
+      modal.btnOk.textContent = okText;
+      modal.btnOk.className = `${okClass} disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition`;
+
+      const isValid = () => (showInput ? (validate ? !!validate(modal.input.value) : !!modal.input.value.trim()) : true);
+      const update = () => { modal.btnOk.disabled = !isValid(); };
+
+      const cleanup = () => {
+        modal.input.removeEventListener('input', update);
+        modal.input.removeEventListener('keydown', onKeydown);
+        modal.btnOk.removeEventListener('click', onOk);
+        modal.btnCancel.removeEventListener('click', onCancel);
+        modal.btnClose.removeEventListener('click', onCancel);
+        modal.overlay.removeEventListener('click', onOverlay);
+      };
+
+      const hide = () => {
+        modal.overlay.classList.add('hidden');
+        modal.overlay.classList.remove('flex');
+        isModalOpen = false;
+      };
+
+      const finish = (val) => {
+        cleanup();
+        hide();
+        resolve(val);
+      };
+
+      const onOk = () => finish(showInput ? String(modal.input.value || '').trim() : '__ok__');
+      const onCancel = () => finish(null);
+      const onOverlay = (e) => { if (e.target === modal.overlay) onCancel(); };
+      const onKeydown = (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+        if (e.key === 'Enter') { e.preventDefault(); if (!modal.btnOk.disabled) onOk(); }
+      };
+
+      modal.input.addEventListener('input', update);
+      modal.input.addEventListener('keydown', onKeydown);
+      modal.btnOk.addEventListener('click', onOk);
+      modal.btnCancel.addEventListener('click', onCancel);
+      modal.btnClose.addEventListener('click', onCancel);
+      modal.overlay.addEventListener('click', onOverlay);
+
+      update();
+      modal.overlay.classList.remove('hidden');
+      modal.overlay.classList.add('flex');
+      setTimeout(() => {
+        if (showInput) {
+          modal.input.focus();
+          modal.input.select();
+        } else {
+          modal.btnOk.focus();
+        }
+      }, 0);
+    });
+  };
+
+  const rectNormalize = (a, b) => ({ r1: Math.min(a.r, b.r), c1: Math.min(a.c, b.c), r2: Math.max(a.r, b.r), c2: Math.max(a.c, b.c) });
+  const rectContains = (rect, r, c) => r >= rect.r1 && r <= rect.r2 && c >= rect.c1 && c <= rect.c2;
+  const rectOverlap = (a, b) => !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2);
+  const getOccupiedRects = () => state.items.map(it => ({ ...it }));
+
+  const serialize = () => {
+    layoutInput.value = JSON.stringify({ version: state.version, rows: state.rows, cols: state.cols, items: state.items });
+  };
+
+  const setStatus = () => {
+    const rackCount = state.items.filter(i => i.type === 'rack').length;
+    const tableVisitorCount = state.items.filter(i => i.type === 'table' && i.role === 'visitor').length;
+    const tableLibrarianCount = state.items.filter(i => i.type === 'table' && i.role === 'librarian').length;
+    const tableGuestCount = state.items.filter(i => i.type === 'table' && i.role === 'guest').length;
+    const doorCount = state.items.filter(i => i.type === 'door').length;
+    let modeText = '';
+    if (mode === 'add_rack') modeText = ' • Mode: tambah Rak';
+    if (mode === 'add_table_visitor') modeText = ' • Mode: tambah Meja Pengunjung';
+    if (mode === 'add_table_librarian') modeText = ' • Mode: tambah Meja Pustakawan';
+    if (mode === 'add_table_guest') modeText = ' • Mode: tambah Meja Buku Tamu';
+    if (mode === 'add_door') modeText = ' • Mode: tambah Pintu';
+    statusEl.textContent = `Rak: ${rackCount}, Meja Pengunjung: ${tableVisitorCount}, Meja Pustakawan: ${tableLibrarianCount}, Meja Buku Tamu: ${tableGuestCount}, Pintu: ${doorCount} • Grid: ${state.rows}×${state.cols}` + modeText;
+  };
+
+  const itemTypeClass = (it) => {
+    if (it.type === 'rack') return 'rd-item--rack';
+    if (it.type === 'door') return 'rd-item--door';
+    if (it.type === 'table') {
+      if (it.role === 'visitor') return 'rd-item--table-visitor';
+      if (it.role === 'librarian') return 'rd-item--table-librarian';
+      if (it.role === 'guest') return 'rd-item--table-guest';
+    }
+    return 'rd-item--rack';
+  };
+
+  const ensureGridSize = () => {
+    const nr = Math.max(4, Math.min(60, Number(rowsInput.value) || 25));
+    const nc = Math.max(4, Math.min(60, Number(colsInput.value) || 40));
+    if (nr < state.rows || nc < state.cols) {
+      const wouldCut = state.items.some(it => it.r2 > nr || it.c2 > nc);
+      if (wouldCut) {
+        rowsInput.value = String(state.rows);
+        colsInput.value = String(state.cols);
+        alert('Rows/Cols tidak boleh dikecilkan karena ada objek di area tersebut. Hapus atau pindahkan objek terlebih dahulu.');
+        return;
+      }
+    }
+    state.rows = nr;
+    state.cols = nc;
+    state.items = state.items.filter(it => it.r2 <= nr && it.c2 <= nc);
+  };
+
+  const promptText = async (label, placeholder = '') => {
+    return await showModal({
+      title: label || 'Nama',
+      desc: null,
+      hint: 'Wajib diisi.',
+      placeholder: placeholder || '',
+      defaultValue: placeholder || '',
+      okText: 'Simpan',
+      okClass: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300',
+      validate: (v) => String(v || '').trim().length > 0,
+    });
+  };
+
+  const addItem = async (rect, subType) => {
+    const occupied = getOccupiedRects();
+    if (occupied.some(it => rectOverlap(it, rect))) {
+      alert('Area yang dipilih sudah terpakai. Pilih area lain.');
+      return false;
+    }
+    const baseType = subType === 'rack' ? 'rack' : subType === 'door' ? 'door' : 'table';
+    const h = rect.r2 - rect.r1 + 1, w = rect.c2 - rect.c1 + 1;
+    if ((baseType === 'rack' || baseType === 'table') && (h < 2 || w < 2)) {
+      alert('Rak dan meja minimal 2×2 kotak. Pilih area yang lebih besar.');
+      return false;
+    }
+    if (baseType === 'door' && !((h >= 2 && w >= 1) || (h >= 1 && w >= 2))) {
+      alert('Pintu minimal 1×2 atau 2×1 kotak (horizontal atau vertikal). Pilih area 2 kotak berderet.');
+      return false;
+    }
+    let defaultName = 'Rak ' + (state.items.filter(x => x.type === 'rack').length + 1);
+    let promptMsg = 'Nama Rak:';
+    let role = null;
+    if (subType === 'table_visitor') { role = 'visitor'; defaultName = 'Meja Pengunjung ' + (state.items.filter(x => x.type === 'table' && x.role === 'visitor').length + 1); promptMsg = 'Nama Meja Pengunjung:'; }
+    else if (subType === 'table_librarian') { role = 'librarian'; defaultName = 'Meja Pustakawan ' + (state.items.filter(x => x.type === 'table' && x.role === 'librarian').length + 1); promptMsg = 'Nama Meja Pustakawan:'; }
+    else if (subType === 'table_guest') { role = 'guest'; defaultName = 'Meja Buku Tamu ' + (state.items.filter(x => x.type === 'table' && x.role === 'guest').length + 1); promptMsg = 'Nama Meja Buku Tamu:'; }
+    else if (subType === 'door') { defaultName = 'Pintu ' + (state.items.filter(x => x.type === 'door').length + 1); promptMsg = 'Nama Pintu:'; }
+    let name = null;
+    if (baseType === 'rack') {
+      name = await promptText(promptMsg, defaultName);
+      if (!name) return false;
+    } else {
+      // selain rak, tidak perlu input nama (otomatis)
+      name = defaultName;
+    }
+    state.items.push({ id: `${baseType}_${Date.now()}_${Math.random().toString(16).slice(2)}`, type: baseType, role, name, ...rect });
+    return true;
+  };
+
+  const resetTempSelection = () => { dragStart = null; dragEnd = null; isMouseDown = false; };
+
+  const getCellFromMouse = (clientX, clientY) => {
+    const wrapper = document.getElementById('denahViewport');
+    if (!wrapper || !gridEl) return null;
+    const br = gridEl.getBoundingClientRect();
+    const step = 32;
+    const c = Math.floor((clientX - br.left + 3) / step) + 1;
+    const r = Math.floor((clientY - br.top + 3) / step) + 1;
+    if (r < 1 || r > state.rows || c < 1 || c > state.cols) return null;
+    return { r, c };
+  };
+
+  const tryMoveItem = (it, r1, c1) => {
+    const h = it.r2 - it.r1 + 1, w = it.c2 - it.c1 + 1;
+    r1 = Math.max(1, Math.min(state.rows - h + 1, r1));
+    c1 = Math.max(1, Math.min(state.cols - w + 1, c1));
+    const r2 = r1 + h - 1, c2 = c1 + w - 1;
+    const others = state.items.filter(x => x.id !== it.id);
+    const newRect = { r1, c1, r2, c2 };
+    if (others.some(o => rectOverlap(o, newRect))) return false;
+    it.r1 = r1; it.c1 = c1; it.r2 = r2; it.c2 = c2;
+    return true;
+  };
+
+  const setMode = (newMode) => {
+    if (mode === newMode) mode = null;
+    else mode = newMode;
+    resetTempSelection();
+    movingItemId = null;
+    render();
+    updateModeButtons();
+  };
+
+  function updateModeButtons() {
+    const wrap = document.getElementById('modeButtonsWrap');
+    if (!wrap) return;
+    wrap.querySelectorAll('[data-mode]').forEach(btn => {
+      const active = mode && btn.getAttribute('data-mode') === mode;
+      btn.classList.toggle('ring-4', active);
+      btn.classList.toggle('ring-gray-900', active);
+      btn.classList.toggle('ring-offset-2', active);
+      btn.classList.toggle('shadow-inner', active);
+      btn.classList.toggle('scale-95', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.title = active ? 'Mode aktif — klik lagi untuk batal' : 'Klik untuk mode tambah';
+    });
+  }
+
+  const render = () => {
+    gridEl.className = 'rd-grid';
+    gridEl.style.gridTemplateColumns = `repeat(${state.cols}, 26px)`;
+    gridEl.style.gridTemplateRows = `repeat(${state.rows}, 26px)`;
+
+    const occupied = getOccupiedRects().filter(it => it.id !== movingItemId);
+    const selection = (dragStart && dragEnd) ? rectNormalize(dragStart, dragEnd) : null;
+
+    const emptySet = new Set();
+    for (let r = 1; r <= state.rows; r++)
+      for (let c = 1; c <= state.cols; c++)
+        if (!occupied.some(it => rectContains(it, r, c))) emptySet.add(`${r}:${c}`);
+
+    gridEl.innerHTML = '';
+
+    emptySet.forEach(key => {
+      const [r, c] = key.split(':').map(Number);
+      const div = document.createElement('div');
+      div.className = 'rd-cell';
+      div.dataset.r = String(r);
+      div.dataset.c = String(c);
+      div.title = `(${r},${c})`;
+      div.style.gridRow = String(r);
+      div.style.gridColumn = String(c);
+      gridEl.appendChild(div);
+    });
+
+    state.items.forEach(it => {
+      if (it.id === movingItemId) return;
+      const div = document.createElement('div');
+      div.className = `rd-item ${itemTypeClass(it)}`;
+      div.dataset.itemId = it.id;
+      div.title = (it.name || '').trim() + ' — klik-tahan & geser untuk pindah, lepas tanpa geser untuk hapus';
+      const spanR = it.r2 - it.r1 + 1, spanC = it.c2 - it.c1 + 1;
+      div.style.gridRow = `${it.r1} / span ${spanR}`;
+      div.style.gridColumn = `${it.c1} / span ${spanC}`;
+      const label = document.createElement('span');
+      label.className = 'rd-item-label';
+      label.textContent = it.name || '';
+      div.appendChild(label);
+      gridEl.appendChild(div);
+    });
+
+    if (movingItemId && dropTarget) {
+      const it = state.items.find(x => x.id === movingItemId);
+      if (it) {
+        const h = it.r2 - it.r1 + 1, w = it.c2 - it.c1 + 1;
+        let r1 = Math.max(1, Math.min(state.rows - h + 1, dropTarget.r));
+        let c1 = Math.max(1, Math.min(state.cols - w + 1, dropTarget.c));
+        const div = document.createElement('div');
+        div.className = `rd-item rd-item--preview ${itemTypeClass(it)}`;
+        div.style.gridRow = `${r1} / span ${h}`;
+        div.style.gridColumn = `${c1} / span ${w}`;
+        const label = document.createElement('span');
+        label.className = 'rd-item-label';
+        label.textContent = it.name || '';
+        div.appendChild(label);
+        gridEl.appendChild(div);
+      }
+    }
+
+    if (selection && mode) {
+      const sel = document.createElement('div');
+      sel.className = 'rd-selection';
+      const spanR = selection.r2 - selection.r1 + 1, spanC = selection.c2 - selection.c1 + 1;
+      sel.style.gridRow = `${selection.r1} / span ${spanR}`;
+      sel.style.gridColumn = `${selection.c1} / span ${spanC}`;
+      sel.textContent = 'Lepas untuk tambah';
+      gridEl.appendChild(sel);
+    }
+
+    serialize();
+    setStatus();
+  };
+
+  btnAddRack.addEventListener('click', () => setMode('add_rack'));
+  btnAddVisitorTable.addEventListener('click', () => setMode('add_table_visitor'));
+  btnAddLibrarianTable.addEventListener('click', () => setMode('add_table_librarian'));
+  btnAddGuestTable.addEventListener('click', () => setMode('add_table_guest'));
+  btnAddDoor.addEventListener('click', () => setMode('add_door'));
+
+  btnClear.addEventListener('click', async () => {
+    const ok = await showModal({
+      title: 'Konfirmasi Reset Denah Ruangan',
+      desc: 'Reset akan menghapus semua item (rak, meja, pintu) pada denah ini. Lanjutkan?',
+      hint: null,
+      showInput: false,
+      okText: 'Reset',
+      okClass: 'bg-red-600 hover:bg-red-700 disabled:bg-red-300',
+      validate: null,
+    });
+    if (!ok) return;
+    state.items = [];
+    mode = null;
+    resetTempSelection();
+    render();
+    updateModeButtons();
+  });
+
+  rowsInput.addEventListener('change', () => { ensureGridSize(); render(); });
+  colsInput.addEventListener('change', () => { ensureGridSize(); render(); });
+
+  gridEl.addEventListener('mousedown', (e) => {
+    if (isModalOpen) return;
+    const item = e.target.closest('.rd-item');
+    if (item && !item.classList.contains('rd-item--preview')) {
+      const itemId = item.dataset.itemId;
+      const it = state.items.find(x => x.id === itemId);
+      if (!it) return;
+      e.preventDefault();
+      movingItemId = itemId;
+      moveStartCell = { r: it.r1, c: it.c1 };
+      dropTarget = { r: it.r1, c: it.c1 };
+      resetTempSelection();
+      render();
+      return;
+    }
+    const cell = e.target.closest('.rd-cell');
+    if (!cell) return;
+    if (!mode) return;
+    isMouseDown = true;
+    dragStart = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
+    dragEnd = { ...dragStart };
+    render();
+  });
+
+  gridEl.addEventListener('mouseover', (e) => {
+    if (isModalOpen) return;
+    if (!isMouseDown || !mode) return;
+    const cell = e.target.closest('.rd-cell');
+    if (!cell) return;
+    dragEnd = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
+    render();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isModalOpen) return;
+    if (movingItemId && gridEl) {
+      const cell = getCellFromMouse(e.clientX, e.clientY);
+      if (cell) { dropTarget = cell; render(); }
+    }
+  });
+
+  window.addEventListener('mouseup', async () => {
+    if (isModalOpen) return;
+    if (movingItemId) {
+      const it = state.items.find(x => x.id === movingItemId);
+      if (it && dropTarget && (dropTarget.r !== moveStartCell.r || dropTarget.c !== moveStartCell.c)) {
+        if (!tryMoveItem(it, dropTarget.r, dropTarget.c)) alert('Tidak bisa pindah: area tertutup objek lain.');
+      } else if (it && (!dropTarget || (dropTarget.r === moveStartCell.r && dropTarget.c === moveStartCell.c))) {
+        const okDel = await showModal({
+          title: 'Konfirmasi Hapus Objek',
+          desc: `Hapus \"${it.name}\" dari denah?`,
+          hint: null,
+          showInput: false,
+          okText: 'Hapus',
+          okClass: 'bg-red-600 hover:bg-red-700 disabled:bg-red-300',
+          validate: null,
+        });
+        if (okDel) {
+          state.items = state.items.filter(x => x.id !== movingItemId);
+        }
+      }
+      movingItemId = null;
+      moveStartCell = null;
+      dropTarget = null;
+      render();
+      return;
+    }
+    if (!isMouseDown || !mode || !dragStart || !dragEnd) { resetTempSelection(); return; }
+    const rect = rectNormalize(dragStart, dragEnd);
+    let subType = 'rack';
+    if (mode === 'add_table_visitor') subType = 'table_visitor';
+    if (mode === 'add_table_librarian') subType = 'table_librarian';
+    if (mode === 'add_table_guest') subType = 'table_guest';
+    if (mode === 'add_door') subType = 'door';
+    const ok = await addItem(rect, subType);
+    resetTempSelection();
+    render();
+  });
+
+  ensureGridSize();
+  render();
+  updateModeButtons();
+})();
+</script>

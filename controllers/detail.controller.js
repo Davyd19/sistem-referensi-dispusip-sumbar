@@ -9,7 +9,8 @@ const {
     BookPublisher,
     BookSubject,
     BookCopy,
-    BookView
+    BookView,
+    Ruangan
 } = require("../models");
 const QRCode = require("qrcode");
 
@@ -26,6 +27,11 @@ module.exports = {
             const book = await Book.findOne({
                 where: { id: bookId },
                 include: [
+                    {
+                        model: req.context?.models?.Ruangan || require('../models').Ruangan,
+                        as: 'ruangan',
+                        attributes: ['id_ruangan', 'nama_ruangan', 'layout_json']
+                    },
                     { model: Author, through: { model: BookAuthor, attributes: [] }, required: false },
                     { model: Publisher, through: { model: BookPublisher, attributes: [] }, required: false },
                     { model: Subject, through: { model: BookSubject, attributes: [] }, required: false },
@@ -64,7 +70,7 @@ module.exports = {
                 author: book.Authors?.[0]?.name || "-",
                 // Untuk penulis tambahan jika ada lebih dari 1
                 additional_author: book.Authors?.length > 1 ? book.Authors.slice(1).map(a => a.name).join(', ') : null,
-                
+
                 subject: book.Subjects?.map(s => s.name).join(', ') || '-',
                 category: book.Category?.name || "-",
                 category_id: book.category_id, // Simpan ID kategori untuk logic related
@@ -72,7 +78,8 @@ module.exports = {
                 total_books: totalBooks,
                 stock_total: book.stock_total,
                 stock_available: book.stock_available,
-                image: book.image || null
+                image: book.image || null,
+                layout_json: book.ruangan?.layout_json || null
             };
 
             // Siapkan data eksemplar
@@ -100,7 +107,7 @@ module.exports = {
             // ================================
             // 3. Ambil Karya Terkait (LOGIC BARU)
             // ================================
-            
+
             // A. Ambil ID Subjek dari buku ini
             const subjectIds = book.Subjects ? book.Subjects.map(s => s.id) : [];
             let relatedBookIdsFromSubject = [];

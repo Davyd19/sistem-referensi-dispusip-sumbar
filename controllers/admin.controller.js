@@ -184,27 +184,14 @@ const toTitleCase = (str) => {
 
 // Tambahkan Fungsi Standardisasi Lokasi Rak
 const standardizeShelfLocation = (rawLocation) => {
-    if (!rawLocation) return null;
-    
-    // 1. Ubah ke string
-    let loc = String(rawLocation);
-    
-    // 2. Hapus tanda kutip ganda/tunggal, trim spasi
-    loc = loc.replace(/['"]+/g, '').trim();
-    
-    // 3. Cek pola (misal: "A1" atau "a1")
-    // Jika formatnya hanya huruf+angka (contoh: A1, B2), tambahkan prefix "Rak "
-    if (loc.match(/^[A-H][1-9]$/i)) {
-        return `Rak ${loc.toUpperCase()}`;
-    }
-    
-    // 4. Jika formatnya sudah "Rak A1" tapi huruf kecil atau spasi aneh
-    const match = loc.match(/^Rak\s*([A-H][1-9])$/i);
-    if (match) {
-        return `Rak ${match[1].toUpperCase()}`;
-    }
+    if (rawLocation == null) return null;
 
-    // Jika tidak sesuai pola (misal: "Gudang"), kembalikan apa adanya (tapi tanpa kutip)
+    // Simpan persis nama rak yang dipilih (sesuai denah), tanpa dipaksa jadi "Rak A1"
+    let loc = String(rawLocation).replace(/['"]+/g, '').trim();
+
+    // Treat kosong / "-" sebagai null
+    if (!loc || loc === '-') return null;
+
     return loc;
 };
 
@@ -936,12 +923,12 @@ module.exports = {
             const publishers = await Publisher.findAll({ order: [['name', 'ASC']] });
             const subjects = await Subject.findAll({ order: [['name', 'ASC']] });
 
-            // 4. Render ke view dengan mengirimkan variabel 'namaRuangan'
+            // 4. Render ke view; kirim layout_json ruangan untuk denah pilih rak
             res.render("admin/admin_add_book", {
                 title: "Tambah Buku",
                 active: 'add',
-                // Kirim nama ruangan agar ditangkap oleh header.ejs
                 namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : null,
+                layoutJson: ruanganAdmin?.layout_json ?? null,
                 categories,
                 authors,
                 publishers,
@@ -1145,11 +1132,12 @@ module.exports = {
             const publishers = await Publisher.findAll({ order: [['name', 'ASC']] });
             const subjects = await Subject.findAll({ order: [['name', 'ASC']] });
 
-            // 5. Render dengan menyertakan 'namaRuangan'
+            // 5. Render; kirim layout_json ruangan untuk denah pilih rak
             res.render("admin/admin_edit_book", {
                 title: "Edit Buku",
-                active: 'books', // Navigasi tetap di menu buku
-                namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : null, // Muncul di header.ejs
+                active: 'books',
+                namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : null,
+                layoutJson: ruanganAdmin?.layout_json ?? null,
                 book,
                 categories,
                 authors,
@@ -1567,10 +1555,11 @@ module.exports = {
             });
             const shelves = shelvesRaw.map(s => s.location);
 
-            // 6. RENDER VIEW
+            // 6. RENDER VIEW (kirim layout_json ruangan agar denah sama dengan tambah/edit buku)
             res.render("admin/shelf_management", {
                 title: "Manajemen Lokasi Rak",
-                namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : 'Semua Ruangan', // Muncul di Header
+                namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : 'Semua Ruangan',
+                layoutJson: ruanganAdmin?.layout_json ?? null,
                 books,
                 categories,
                 subjects,

@@ -1,117 +1,39 @@
 <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
     <div class="p-6">
         <% 
-            // Ambil parameter isPopup di awal untuk menghindari error
             const isPopupParam = typeof isPopup !== 'undefined' ? isPopup : false;
-            
-            // Ambil shelfLocation dari parameter (untuk highlight awal jika ada)
             let shelfRaw = typeof shelfLocation !== 'undefined' ? shelfLocation : '';
-            // Normalisasi: hapus prefix "Rak " jika ada, ubah ke uppercase
-            let shelf = shelfRaw.replace(/['"]+/g, '').replace(/^Rak\s*/i, '').trim().toUpperCase();
-            
-            // Fungsi untuk cek apakah rak ini adalah lokasi buku
-            function isBookRack(rackId, rackId2) {
-                if (!shelf) return false;
-                const shelfUpper = shelf.toUpperCase();
-                return shelfUpper === rackId.toUpperCase() || (rackId2 && shelfUpper === rackId2.toUpperCase());
+            let shelf = shelfRaw.replace(/['"]+/g, '').trim();
+            let hasDbLayout = false;
+            let dRows = 12, dCols = 16, dItems = [];
+            const layoutData = typeof layoutJson !== 'undefined' ? layoutJson : null;
+            if (layoutData) {
+                try {
+                    const lData = typeof layoutData === 'string' ? JSON.parse(layoutData) : layoutData;
+                    if (lData && Array.isArray(lData.items) && lData.items.length) {
+                        hasDbLayout = true;
+                        dRows = lData.rows || 12;
+                        dCols = lData.cols || 16;
+                        dItems = lData.items;
+                    }
+                } catch (e) { console.error('Error parsing layout JSON', e); }
             }
-
-            // --- LAYOUT DATA ---
-            const layoutData = [
-                // --- 1. AREA ATAS KIRI ---
-                { id: 'cab1', type: 'cabinet', label: '', x: 2, y: 3, w: 5, h: 4, color: 'bg-gray-300' },
-                { id: 'cab2', type: 'cabinet', label: '', x: 2, y: 8, w: 5, h: 4, color: 'bg-gray-300' },
-                
-                // Meja hijau toska vertikal (di bawah kabinet)
-                { id: 'desk_left_top', type: 'desk', label: '', x: 3, y: 16, w: 4, h: 12, color: 'bg-teal-400' },
-
-                // Meja Pustakawan
-                { id: 'lib_desk', type: 'desk', label: '', x: 13, y: 8, w: 22, h: 7, color: 'bg-teal-400' },
-
-                // --- 2. SIDEBAR KIRI (MEJA PENGUNJUNG VERTIKAL) ---
-                { id: 'visit_v_1', type: 'desk', label: '', x: 2, y: 35, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-                { id: 'visit_v_2', type: 'desk', label: '', x: 2, y: 50, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-                { id: 'visit_v_3', type: 'desk', label: '', x: 2, y: 65, w: 5, h: 12, color: 'bg-red-400', verticalText: true },
-
-                // --- 3. POJOK KIRI BAWAH (MEJA PENGUNJUNG HORIZONTAL) ---
-                { id: 'visit_h_1', type: 'desk', label: '', x: 2, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-                { id: 'visit_h_2', type: 'desk', label: '', x: 13, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-                { id: 'visit_h_3', type: 'desk', label: '', x: 24, y: 85, w: 9, h: 7, color: 'bg-red-400' },
-
-                // --- 4. TENGAH RUANGAN ---
-                { id: 'center_1', type: 'desk', label: '', x: 45, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                { id: 'center_2', type: 'desk', label: '', x: 59, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                { id: 'center_3', type: 'desk', label: '', x: 73, y: 40, w: 13, h: 12, color: 'bg-red-400' },
-                
-                // Meja Buku Tamu (Hijau)
-                { id: 'guest_book', type: 'desk', label: '', x: 38, y: 65, w: 6, h: 6, color: 'bg-green-400' },
-
-                // --- 5. POJOK KANAN BAWAH (KOTAK MERAH) ---
-                { id: 'corner_red', type: 'desk', label: '', x: 85, y: 85, w: 8, h: 8, color: 'bg-red-400' }
-            ];
-
-            // --- LOGIKA RAK BUKU ---
-            const rackStartX = 45; 
-            const rackWidth = 4;
-            const rackGap = 1.2;   
-            
-            // A. RAK ATAS (8 Kolom: A1-H1)
-            const topLabels = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
-            for (let i = 0; i < 8; i++) {
-                const currentX = rackStartX + (i * (rackWidth + rackGap));
-                const label = topLabels[i];
-                
-                layoutData.push({ 
-                    id: `rack_top_${i}`, type: 'rack', label: label, 
-                    x: currentX, y: 5, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
+            function normalizeKey(v) {
+                return String(v || '').replace(/['"]+/g, '').trim().replace(/\s/g, '').toUpperCase();
             }
-
-            // B. RAK BAWAH (8 Kolom: A2-H2)
-            const bottomLabels = ['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2'];
-            
-            // 4 Rak gabungan pertama (A2-D2)
-            for (let i = 0; i < 4; i++) {
-                const currentX = rackStartX + (i * (rackWidth + rackGap));
-                const label = bottomLabels[i];
-                layoutData.push({ 
-                    id: `rack_bot_${i}`, type: 'rack', label: label, 
-                    x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
+            function isBookRack(name) {
+                // Cocokkan 1 rak saja: exact match (case/space-insensitive).
+                // Tetap toleran untuk legacy "Rak X" vs "X".
+                const s1 = normalizeKey(shelf);
+                if (!s1 || !name) return false;
+                const n1 = normalizeKey(name);
+                if (n1 === s1) return true;
+                const s2 = normalizeKey(String(shelf).replace(/^Rak\s+/i, ''));
+                const n2 = normalizeKey(String(name).replace(/^Rak\s+/i, ''));
+                return !!s2 && !!n2 && n2 === s2;
             }
-
-            // Rak E2 (gap)
-            const gapRackX = rackStartX + (4 * (rackWidth + rackGap));
-            layoutData.push({ 
-                id: 'rack_gap', type: 'rack', label: 'E2', 
-                x: gapRackX, y: 77, w: rackWidth, h: 12, color: 'bg-gray-300', 
-                verticalText: true, rackId: 'E2'
-            });
-
-            // 2 Rak gabungan setelah E2 (F2, G2)
-            for (let i = 0; i < 2; i++) {
-                const currentX = rackStartX + ((5 + i) * (rackWidth + rackGap));
-                const label = bottomLabels[5 + i];
-                layoutData.push({ 
-                    id: `rack_bot_${5 + i}`, type: 'rack', label: label, 
-                    x: currentX, y: 65, w: rackWidth, h: 24, color: 'bg-gray-300', 
-                    verticalText: true, rackId: label
-                });
-            }
-
-            // C. RAK VERTIKAL POJOK KANAN (H2)
-            layoutData.push({ 
-                id: 'rack_right_combined', type: 'rack', label: 'H2', 
-                x: 88, y: 55, w: 4, h: 24, color: 'bg-gray-300', 
-                verticalText: true, rackId: 'H2'
-            });
         %>
-
         <%
-            // Tentukan ukuran map berdasarkan apakah ini popup atau tidak
-            // Gunakan isPopupParam yang sudah didefinisikan di awal
             const mapSizeClass = isPopupParam ? 'aspect-[2/1] max-h-[300px] sm:max-h-[400px]' : 'aspect-[16/9]';
         %>
         <div 
@@ -119,50 +41,44 @@
             class="relative w-full <%= mapSizeClass %> bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden"
             data-input-field-id="<%= typeof inputFieldId !== 'undefined' ? inputFieldId : 'shelf_location' %>"
         >
-            
-            <% layoutData.forEach(item => { 
-                const isHighlighted = item.type === 'rack' && item.rackId && isBookRack(item.rackId, item.rackId2);
-                
-                // === LOGIKA HIGHLIGHT (BIRU) ===
-                // Jika aktif: Gunakan warna Biru (blue-600), shadow biru, border biru tua
-                const finalColor = isHighlighted ? 'bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.6)] z-10' : item.color;
-                const textColor = isHighlighted ? 'text-white' : (item.type === 'desk' ? 'text-white' : 'text-gray-700');
-                const borderColor = isHighlighted ? 'border-blue-800 border-2' : 'border-gray-500/30 border';
-                
-                // Untuk rak, tambahkan class untuk interaktif
-                const clickableClass = item.type === 'rack' && item.rackId ? 'cursor-pointer hover:scale-110 hover:shadow-lg' : 'cursor-default';
-                const dataRackId = item.type === 'rack' && item.rackId ? `data-rack-id="${item.rackId}"` : '';
-            %>
-                <div 
-                    class="absolute flex items-center justify-center rounded-sm transition-all <%= finalColor %> <%= textColor %> <%= borderColor %> <%= clickableClass %> p-0"
-                    <%= dataRackId %>
-                    style="
-                        left: <%= item.x %>%;
-                        top: <%= item.y %>%;
-                        width: <%= item.w %>%;
-                        height: <%= item.h %>%;
-                    "
-                >
-                    <% if (item.type === 'rack' && item.label) { %>
-                        <span 
-                            class="text-[7px] md:text-[8px] font-bold text-center leading-none tracking-tighter overflow-hidden w-full"
-                            style="
-                                writing-mode: <%= item.verticalText ? 'vertical-rl' : 'horizontal-tb' %>;
-                                transform: <%= item.verticalText ? 'rotate(180deg)' : 'none' %>;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 100%;
-                                height: 100%;
-                                padding: 1px;
-                            "
-                        >
-                            <%= item.label %>
-                        </span>
-                    <% } %>
+            <% if (hasDbLayout) { %>
+                <div class="shelf-map-grid w-full h-full grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden" style="
+                    grid-template-columns: repeat(<%= dCols %>, 1fr);
+                    grid-template-rows: repeat(<%= dRows %>, 1fr);
+                    aspect-ratio: <%= dCols %> / <%= dRows %>;
+                ">
+                    <% dItems.forEach(item => {
+                        const spanR = (item.r2 || item.r1) - (item.r1 || 1) + 1;
+                        const spanC = (item.c2 || item.c1) - (item.c1 || 1) + 1;
+                        const r1 = item.r1 || 1, c1 = item.c1 || 1;
+                        let bgClass = 'bg-gray-300', borderClass = 'border-gray-400', textClass = 'text-gray-700';
+                        if (item.type === 'table') {
+                            bgClass = 'bg-red-400'; borderClass = 'border-red-500'; textClass = 'text-white';
+                            if (item.role === 'librarian' || (item.name && /pustakawan|admin/i.test(item.name))) { bgClass = 'bg-teal-400'; borderClass = 'border-teal-500'; }
+                            else if (item.role === 'guest' || (item.name && /tamu/i.test(item.name))) { bgClass = 'bg-green-400'; borderClass = 'border-green-500'; }
+                        } else if (item.type === 'door') { bgClass = 'bg-orange-400'; borderClass = 'border-orange-500'; textClass = 'text-white'; }
+                        else if (item.type === 'cabinet') { bgClass = 'bg-gray-400'; borderClass = 'border-gray-500'; textClass = 'text-white'; }
+                        else if (item.type === 'rack') {
+                            if (isBookRack(item.name)) { bgClass = 'bg-blue-600 animate-pulse'; borderClass = 'border-blue-800'; textClass = 'text-white'; }
+                            else { bgClass = 'bg-gray-300'; borderClass = 'border-gray-500'; }
+                        }
+                        const isRack = item.type === 'rack' && (item.name != null && String(item.name).trim() !== '');
+                        const rackName = isRack ? String(item.name).trim() : '';
+                        const clickableClass = isRack ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : 'cursor-default';
+                    %>
+                        <div 
+                            class="flex items-center justify-center rounded-sm border-2 border-solid shadow-sm transition-all <%= bgClass %> <%= borderClass %> <%= textClass %> <%= clickableClass %> p-0.5 text-[8px] font-bold text-center overflow-hidden"
+                            <% if (isRack) { %>data-rack-id="<%= rackName.replace(/"/g, '&quot;') %>"<% } %>
+                            style="grid-column: <%= c1 %> / span <%= spanC %>; grid-row: <%= r1 %> / span <%= spanR %>; z-index: 10;"
+                        ><%= isRack ? rackName : '' %></div>
+                    <% }); %>
                 </div>
-            <% }); %>
-            
+            <% } else { %>
+                <div class="flex flex-col items-center justify-center h-full min-h-[120px] text-gray-500 px-4 py-6">
+                    <p class="text-sm font-medium mb-1">Denah ruangan belum diatur</p>
+                    <p class="text-xs">Atur denah di <strong>Kelola Ruangan</strong> (Super Admin) lalu pilih rak di sini.</p>
+                </div>
+            <% } %>
         </div>
         
         <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
@@ -181,6 +97,10 @@
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-green-400 border border-gray-400"></div> 
                 <span>Meja Buku Tamu</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-orange-400 border border-gray-400"></div> 
+                <span>Pintu</span>
             </div>
             <div id="selected-rack-indicator" class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200 hidden">
                 <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div> 
@@ -240,27 +160,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const allRacks = mapContainer.querySelectorAll('[data-rack-id]');
         console.log('📊 Total rak ditemukan:', allRacks.length);
         
-        const rackIdClean = rackId ? rackId.trim().toUpperCase() : '';
-        console.log('🔍 Mencari rak dengan ID:', rackIdClean);
+        const rackIdClean = rackId != null ? String(rackId).replace(/^["']+|["']+$/g, '').trim() : '';
+        const rackIdNorm = rackIdClean ? rackIdClean.replace(/\s/g, '').toUpperCase() : '';
+        console.log('🔍 Mencari rak dengan ID:', rackIdClean, 'norm:', rackIdNorm);
         
         let foundSelected = false;
         let processedCount = 0;
         
         allRacks.forEach((rack, index) => {
             let currentRackId = rack.getAttribute('data-rack-id');
-            console.log(`  Rak #${index + 1}: attribute value = "${currentRackId}"`);
-            
-            // Hapus tanda kutip ganda jika ada
-            if (currentRackId) {
-                const beforeClean = currentRackId;
-                currentRackId = currentRackId.replace(/^["']+|["']+$/g, '').trim().toUpperCase();
-                if (beforeClean !== currentRackId) {
-                    console.log(`    ⚠️ Dibersihkan dari "${beforeClean}" menjadi "${currentRackId}"`);
-                }
+            if (currentRackId != null) {
+                currentRackId = String(currentRackId).replace(/^["']+|["']+$/g, '').trim();
+            } else {
+                currentRackId = '';
             }
-            
-            const isSelected = currentRackId === rackIdClean;
-            console.log(`    ${isSelected ? '✅' : '⚪'} Match: ${currentRackId} === ${rackIdClean}? ${isSelected}`);
+            const currentNorm = currentRackId ? currentRackId.replace(/\s/g, '').toUpperCase() : '';
+            const isSelected = rackIdNorm.length > 0 && currentNorm.length > 0 && currentNorm === rackIdNorm;
             
             if (isSelected) {
                 foundSelected = true;
@@ -358,24 +273,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🖱️ Rack element ditemukan:', rackElement);
             
             if (rackElement) {
+                e.preventDefault();
+                e.stopPropagation();
                 const rackId = rackElement.getAttribute('data-rack-id');
                 console.log('🖱️ 📦 Rack ID dari attribute:', rackId);
                 console.log('🖱️ 📦 Rack ID type:', typeof rackId);
                 console.log('🖱️ 📦 Rack ID length:', rackId ? rackId.length : 0);
                 
-                if (rackId) {
-                    // Clean rackId dari quotes
-                    const cleanRackId = rackId.replace(/^["']+|["']+$/g, '').trim();
+                if (rackId != null && String(rackId).trim() !== '') {
+                    const cleanRackId = String(rackId).replace(/^["']+|["']+$/g, '').trim();
                     console.log('🖱️ 📦 Clean Rack ID:', cleanRackId);
                     
-                    // Update selectedRackId SEBELUM update highlight untuk mencegah initializeHighlight me-reset
                     const oldSelectedRackId = selectedRackId;
                     selectedRackId = cleanRackId;
                     console.log('🖱️ ✅ selectedRackId di-update dari:', oldSelectedRackId, 'ke:', selectedRackId);
                     
-                    // Update input field dengan format "Rak [LABEL]"
                     const oldInputValue = inputField.value;
-                    const shelfValue = 'Rak ' + cleanRackId;
+                    const shelfValue = cleanRackId;
                     inputField.value = shelfValue;
                     console.log('🖱️ ✅ Input field di-update dari:', oldInputValue, 'ke:', shelfValue);
                     
@@ -447,81 +361,57 @@ document.addEventListener('DOMContentLoaded', function() {
         if (inputField.value) {
             const currentValue = inputField.value.trim();
             console.log('🔄 currentValue dari input:', currentValue);
-            
-            // Ekstrak rak ID dari format "Rak A1" atau "A1"
-            const match = currentValue.match(/Rak\s*([A-H][12])/i) || currentValue.match(/^([A-H][12])$/i);
-            if (match && match[1]) {
-                const rackId = match[1].toUpperCase().trim();
-                console.log('🔄 rackId yang diekstrak:', rackId);
+            const extractCandidates = (v) => {
+                const raw = (v || '').replace(/['"]+/g, '').trim();
+                if (!raw) return [];
+                const noRak = raw.replace(/^Rak\s+/i, '').trim();
+                return Array.from(new Set([raw, noRak].filter(Boolean)));
+            };
+            const candidates = extractCandidates(currentValue);
+            const rackId = candidates[0] || '';
+            if (rackId) {
+                const rackIdNorm = rackId.replace(/\s/g, '').toUpperCase();
+                console.log('🔄 rackId yang diekstrak:', rackId, 'norm:', rackIdNorm);
                 console.log('🔄 selectedRackId:', selectedRackId);
-                console.log('🔄 Apakah selectedRackId === rackId?', selectedRackId && selectedRackId.toUpperCase() === rackId);
-                
-                // Cek apakah selectedRackId sudah sesuai dengan rackId
-                // Jika ya, berarti user baru saja mengklik rak baru, jangan reset highlight
-                if (selectedRackId && selectedRackId.toUpperCase() === rackId) {
+                const selNorm = selectedRackId ? selectedRackId.replace(/\s/g, '').toUpperCase() : '';
+                console.log('🔄 Apakah selectedRackId === rackId?', selNorm && rackIdNorm && selNorm === rackIdNorm);
+                if (selectedRackId && selNorm === rackIdNorm) {
                     console.log('🔄 ⚠️ selectedRackId sudah sesuai dengan rackId, cek apakah sudah ter-highlight');
                     let alreadyHighlighted = false;
                     allRacks.forEach(rack => {
-                        let currentRackId = rack.getAttribute('data-rack-id');
-                        if (currentRackId) {
-                            currentRackId = currentRackId.replace(/^["']+|["']+$/g, '').trim().toUpperCase();
-                        }
-                        if (currentRackId === rackId) {
+                        let cr = rack.getAttribute('data-rack-id');
+                        const crNorm = cr ? cr.replace(/^["']+|["']+$/g, '').replace(/\s/g, '').trim().toUpperCase() : '';
+                        if (crNorm === rackIdNorm) {
                             const computedBg = window.getComputedStyle(rack).backgroundColor;
-                            console.log('🔄 Computed bg untuk rak', currentRackId, ':', computedBg);
-                            // Cek apakah sudah ter-highlight (biru)
-                            if (computedBg.includes('rgb(37, 99, 235)') || computedBg.includes('rgb(37,99,235)')) {
-                                alreadyHighlighted = true;
-                                console.log('🔄 ✅ Rak', currentRackId, 'sudah ter-highlight');
-                            }
+                            if (computedBg.includes('rgb(37, 99, 235)') || computedBg.includes('rgb(37,99,235)')) alreadyHighlighted = true;
                         }
                     });
-                    
-                    // Jika sudah ter-highlight dengan benar, skip untuk menghindari reset
                     if (alreadyHighlighted) {
-                        console.log('🔄 ✅ Rak sudah ter-highlight dengan benar, SKIP untuk menghindari reset');
+                        console.log('🔄 ✅ Rak sudah ter-highlight, SKIP');
                         console.log('🔄 ========================================');
                         return;
-                    } else {
-                        console.log('🔄 ⚠️ Rak belum ter-highlight, akan di-highlight');
                     }
-                } else {
-                    console.log('🔄 ⚠️ selectedRackId tidak sesuai atau tidak ada');
-                    console.log('🔄 selectedRackId:', selectedRackId);
-                    console.log('🔄 rackId:', rackId);
                 }
-                
-                // Cek apakah rak sudah ter-highlight dengan benar
-                let alreadyHighlighted = false;
+                let alreadyHighlighted2 = false;
                 allRacks.forEach(rack => {
-                    let currentRackId = rack.getAttribute('data-rack-id');
-                    if (currentRackId) {
-                        currentRackId = currentRackId.replace(/^["']+|["']+$/g, '').trim().toUpperCase();
-                    }
-                    if (currentRackId === rackId) {
-                        const computedBg = window.getComputedStyle(rack).backgroundColor;
-                        // Cek apakah sudah ter-highlight (biru)
-                        if (computedBg.includes('rgb(37, 99, 235)') || computedBg.includes('rgb(37,99,235)')) {
-                            alreadyHighlighted = true;
-                        }
+                    let cr = rack.getAttribute('data-rack-id');
+                    const crNorm = cr ? cr.replace(/^["']+|["']+$/g, '').replace(/\s/g, '').trim().toUpperCase() : '';
+                    const matchAny = candidates.some(c => c.replace(/\s/g, '').toUpperCase() === crNorm);
+                    if (matchAny) {
+                        const bg = window.getComputedStyle(rack).backgroundColor;
+                        if (bg.includes('rgb(37, 99, 235)') || bg.includes('rgb(37,99,235)')) alreadyHighlighted2 = true;
                     }
                 });
-                
-                // Jika sudah ter-highlight, skip untuk menghindari flicker
-                if (alreadyHighlighted && selectedRackId && selectedRackId.toUpperCase() === rackId) {
+                if (alreadyHighlighted2 && selectedRackId && selNorm === rackIdNorm) {
                     console.log('🔄 ✅ Rak sudah ter-highlight dan selectedRackId sesuai, SKIP');
                     console.log('🔄 ========================================');
                     return;
                 }
-                
                 console.log('🔄 🎨 Memanggil updateHighlight dengan rackId:', rackId);
                 const oldSelectedRackId = selectedRackId;
                 selectedRackId = rackId;
-                console.log('🔄 selectedRackId di-update dari:', oldSelectedRackId, 'ke:', selectedRackId);
                 updateHighlight(rackId);
                 console.log('🔄 ✅ updateHighlight SELESAI dipanggil');
-            } else {
-                console.log('🔄 ⚠️ Tidak ada match untuk rackId dari value:', currentValue);
             }
         } else {
             console.log('🔄 ⚠️ inputField.value kosong, reset semua highlight');
@@ -562,34 +452,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📢 inputField.value saat ini:', inputField.value);
             console.log('📢 Stack trace:', new Error().stack);
             
-            if (e.detail && e.detail.value) {
+            if (e.detail && e.detail.value != null) {
                 const oldValue = inputField.value;
                 // Update nilai input field
-                inputField.value = e.detail.value;
+                inputField.value = String(e.detail.value).replace(/['"]+/g, '').trim();
                 console.log('📢 Input field di-update dari:', oldValue, 'ke:', e.detail.value);
                 
-                let valueToClean = e.detail.value.replace(/['"]+/g, '').trim();
-                
-                // Pastikan format benar
-                let valueToUse = e.detail.value.trim();
-                if (valueToUse && !valueToUse.match(/^Rak\s+/i)) {
-                    const match = valueToUse.match(/^([A-H][12])$/i);
-                    if (match) {
-                        valueToUse = 'Rak ' + match[1];
-                        inputField.value = valueToUse;
-                        console.log('📢 Format di-normalisasi ke:', valueToUse);
-                    }
-                }
-                
-                // Ekstrak rackId dari value
-                const match = valueToUse.match(/Rak\s*([A-H][12])/i) || valueToUse.match(/^([A-H][12])$/i);
-                const rackIdFromEvent = match && match[1] ? match[1].toUpperCase().trim() : null;
-                console.log('📢 rackId dari event:', rackIdFromEvent);
-                console.log('📢 selectedRackId:', selectedRackId);
-                console.log('📢 Apakah rackIdFromEvent === selectedRackId?', rackIdFromEvent && selectedRackId && rackIdFromEvent === selectedRackId.toUpperCase());
-                
-                // Jika rackId dari event sama dengan selectedRackId, skip untuk menghindari reset
-                if (rackIdFromEvent && selectedRackId && rackIdFromEvent === selectedRackId.toUpperCase()) {
+                let valueToUse = inputField.value;
+                const rackIdFromEvent = valueToUse;
+                const rfNorm = rackIdFromEvent ? rackIdFromEvent.replace(/\s/g, '').toUpperCase() : '';
+                const selNorm = selectedRackId ? selectedRackId.replace(/\s/g, '').toUpperCase() : '';
+                if (valueToUse) inputField.value = valueToUse;
+                if (rfNorm && selectedRackId && rfNorm === selNorm) {
                     console.log('📢 ⚠️ rackId dari event sama dengan selectedRackId, SKIP initializeHighlight untuk menghindari reset');
                     console.log('📢 ========================================');
                     return;
@@ -649,23 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Juga listen untuk event custom 'popupOpened' dari parent dengan delay untuk padding responsif
     window.addEventListener('shelfMapPopupOpened', function() {
-        // Pastikan nilai input field sudah benar
-        if (inputField && inputField.value) {
-            let valueToUse = inputField.value.trim();
-            if (valueToUse && !valueToUse.match(/^Rak\s+/i)) {
-                const match = valueToUse.match(/^([A-H][12])$/i);
-                if (match) {
-                    valueToUse = 'Rak ' + match[1];
-                    inputField.value = valueToUse;
-                }
-            }
-        }
-        
-        // Gunakan multiple attempts dengan delay lebih lama untuk memastikan padding responsif ter-apply
         [100, 200, 350, 500, 700, 1000, 1500].forEach(delay => {
-            setTimeout(function() {
-                initializeHighlight();
-            }, delay);
+            setTimeout(function() { initializeHighlight(); }, delay);
         });
     });
 
@@ -695,21 +554,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('shelf-map-container');
             if (!container) return;
             
-            // Baca nilai dari input field
             const currentValue = field ? field.value.trim() : '';
             if (!currentValue) return;
-            
-            // Ekstrak rak ID
-            const match = currentValue.match(/Rak\s*([A-H][12])/i) || currentValue.match(/^([A-H][12])$/i);
-            if (!match || !match[1]) return;
-            
-            const rackId = match[1].toUpperCase();
-            
-            // Cari rak dan highlight
+            const raw = currentValue.replace(/['"]+/g, '').trim();
+            if (!raw) return;
+            const noRak = raw.replace(/^Rak\s+/i, '').trim();
+            const candidates = Array.from(new Set([raw, noRak].filter(Boolean)));
+            const rackId = candidates[0];
+            const rackIdNorm = rackId.replace(/\s/g, '').toUpperCase();
             const allRacks = container.querySelectorAll('[data-rack-id]');
             allRacks.forEach(rack => {
-                const currentRackId = rack.getAttribute('data-rack-id');
-                const isSelected = currentRackId && currentRackId.toUpperCase() === rackId;
+                let cr = rack.getAttribute('data-rack-id');
+                const crNorm = cr ? cr.replace(/^["']+|["']+$/g, '').replace(/\s/g, '').trim().toUpperCase() : '';
+                const isSelected = candidates.some(c => c.replace(/\s/g, '').toUpperCase() === crNorm);
                 
                 if (isSelected) {
                     rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
