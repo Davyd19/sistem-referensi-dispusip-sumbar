@@ -112,7 +112,7 @@
         <div>
             <label class="font-medium">Kategori <span class="text-red-500">*</span></label>
             <select name="category_id" id="category-select" class="w-full p-2 border rounded">
-                <option value="">-- Pilih Kategori --</option>
+                <!-- <option value="">-- Pilih Kategori --</option> -->
                 <% categories.forEach(c => { %>
                     <option value="<%= c.id %>"><%= c.name %></option>
                 <% }) %>
@@ -282,7 +282,16 @@
         });
     }
 
-    initTomSelect("#category-select", "Cari atau tambah kategori...", false);
+    new TomSelect("#category-select", {
+        create: true,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: "Cari atau tambah kategori...",
+        allowEmptyOption: true,
+        // Tambahkan ini agar tidak otomatis memilih baris pertama
+        onInitialize: function() {
+            this.setValue('');
+        }
+    });
     initTomSelect("#penulis-select", "Cari/tambah penulis...");
     initTomSelect("#editor-select", "Cari/tambah editor...");
     initTomSelect("#pj-select", "Cari/tambah penanggung jawab...");
