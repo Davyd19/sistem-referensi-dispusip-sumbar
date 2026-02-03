@@ -21,7 +21,7 @@ module.exports = {
             const id_ruangan = req.query.id_ruangan;
             // 2. Jika tidak ada id_ruangan, paksa user pilih ruangan dulu
             if (!id_ruangan) {
-                return res.redirect('/ruangan'); 
+                return res.redirect('/pilih-ruangan'); 
             }
             // Helper function untuk handle array parameters (karena ada multiple form dengan name yang sama)
             const getFirstValue = (value, defaultValue = "") => {

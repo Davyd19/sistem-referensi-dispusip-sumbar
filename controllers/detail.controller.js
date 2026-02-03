@@ -18,6 +18,7 @@ module.exports = {
     async getDetailPage(req, res) {
         try {
             const bookId = req.params.id;
+            const idRuangan = req.query.id_ruangan || null;
             await BookView.create({ book_id: bookId }).catch(err => {
                 console.error("Gagal mencatat statistik:", err);
             });
@@ -158,7 +159,10 @@ module.exports = {
                 qrImage,
                 relatedBooks: relatedFormatted,
                 copies: copyRows,
-                query: req.query
+                query: {
+                    ...req.query,
+                    id_ruangan: idRuangan 
+                }
             });
 
         } catch (err) {
