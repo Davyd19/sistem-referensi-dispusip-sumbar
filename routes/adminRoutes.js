@@ -143,9 +143,10 @@ const verifyPuskelAccess = (req, res, next) => {
 // 1. Dashboard Logistik
 router.get('/puskel', verifyPuskelAccess, puskelController.index);
 
-// 2. Data Peminjam & Tambah Lembaga
+// 2. Data Peminjam & Riwayat
 router.get('/puskel/borrowers', verifyPuskelAccess, puskelController.listBorrowers);
-router.post('/puskel/institution/add', verifyPuskelAccess, puskelController.addInstitution); // <-- ROUTE BARU
+router.get('/puskel/history', verifyPuskelAccess, puskelController.historyBorrowers);
+router.post('/puskel/institution/add', verifyPuskelAccess, puskelController.addInstitution);
 
 // 3. Kelola Stok (Masuk/Keluar Gudang)
 router.post('/puskel/add-stock', verifyPuskelAccess, puskelController.addStock);
@@ -155,11 +156,14 @@ router.get('/puskel/export', verifyPuskelAccess, puskelController.exportExcel); 
 router.post('/puskel/import', verifyPuskelAccess, uploadExcel.single('excelFile'), puskelController.importExcel); // Import Action
 
 // 4. Sirkulasi
+// === ROUTE BARU: HALAMAN PILIH BUKU ===
+router.get('/puskel/loan/select/:institution_id', verifyPuskelAccess, puskelController.showLoanSelection);
+// ======================================
 router.post('/puskel/loan', verifyPuskelAccess, puskelController.loanBook);
 router.post('/puskel/return', verifyPuskelAccess, puskelController.returnBook);
 
-
-// === ROUTE BARU UNTUK DETAIL ===
+// === ROUTE UNTUK DETAIL ===
 router.get('/puskel/institution/:id', verifyPuskelAccess, puskelController.detailInstitution);
+router.get('/puskel/institution/:id/export', verifyPuskelAccess, puskelController.exportLoanByInstitution);
 
 module.exports = router;

@@ -58,13 +58,19 @@
                     <a href="/admin/puskel" 
                         class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base 
                         <%= typeof active !== 'undefined' && active === 'logistik' ? 'font-semibold text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700' %>">
-                        <i class="fas fa-truck-loading mr-2 w-5 text-center"></i> Logistik Puskel
+                        <i class="fas fa-truck-loading mr-2 w-5 text-center"></i> Buku Puskel
                     </a>
 
                     <a href="/admin/puskel/borrowers" 
                         class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base 
                         <%= typeof active !== 'undefined' && active === 'borrowers' ? 'font-semibold text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700' %>">
                         <i class="fas fa-users mr-2 w-5 text-center"></i> Data Peminjam
+                    </a>
+
+                    <a href="/admin/puskel/history" 
+                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base 
+                        <%= typeof active !== 'undefined' && active === 'puskel_history' ? 'font-semibold text-blue-700 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700' %>">
+                        <i class="fas fa-history mr-2 w-5 text-center"></i> Riwayat Peminjaman
                     </a>
 
                 <% } else { %>
