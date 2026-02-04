@@ -1,17 +1,23 @@
 <%- include('partials/header') %>
 
-<!-- Tom Select CSS -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 
 <div class="w-full px-4 sm:px-6 md:w-[90%] md:mx-auto py-4 md:py-6">
 
+    <div class="mb-4 sm:mb-6">
+        <a href="/pilih-ruangan" class="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors duration-200 group">
+            <div class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm group-hover:border-blue-400 group-hover:bg-blue-50 transition-all">
+                <i class="fas fa-arrow-left text-sm group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-medium text-sm sm:text-base">Kembali ke Daftar Ruangan</span>
+        </a>
+    </div>
+
     <main class="w-full">
             <form action="/search" method="GET">
-            <!-- Mobile: Filter di atas (hidden di desktop) - Compact -->
             <div class="mb-3 md:hidden">
                 <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                    <!-- Header Compact -->
                     <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-1.5">
@@ -24,7 +30,6 @@
                         </div>
                     </div>
                     
-                    <!-- Filter Content - Grid Layout untuk Compact -->
                     <div class="p-3">
                         <input type="hidden" name="q" value="<%= query.q || '' %>">
                         <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
@@ -33,7 +38,6 @@
                         <input type="hidden" name="sortBy" value="<%= query.sortBy || 'title' %>" id="filterSortByMobile">
                         <input type="hidden" name="sortOrder" value="<%= query.sortOrder || 'ASC' %>" id="filterSortOrderMobile">
                         
-                        <!-- Grid 3 kolom untuk mobile -->
                         <div class="grid grid-cols-3 gap-2 mb-2">
                             <div class="min-w-0">
                                 <select name="category" id="categorySelectMobile" class="w-full p-1.5 text-[11px] bg-gray-50 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
@@ -63,7 +67,6 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons - Compact -->
                         <div class="flex gap-2">
                             <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                                 <i class="fas fa-filter text-[10px]"></i> <span>Terapkan</span>
@@ -76,10 +79,8 @@
                     </div>
                 </div>
 
-            <!-- Desktop Layout: Flex container dengan sidebar dan main content -->
             <div class="flex flex-col md:flex-row md:gap-6 md:items-start">
                 
-                <!-- Sidebar Filter (Desktop only) -->
                 <aside class="hidden md:block md:w-64 md:flex-shrink-0 md:sticky md:top-6">
                 <div class="bg-white p-5 rounded-xl border border-blue-100 shadow-sm">
                     <div class="flex items-center mb-3">
@@ -139,11 +140,8 @@
                 </div>
                 </aside>
 
-                <!-- Main Content Area -->
                 <div class="flex-1 flex flex-col md:min-h-0">
-                    <!-- Search Section (Static) - Compact untuk Mobile -->
                     <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-3 sm:mb-4 flex-shrink-0 overflow-hidden">
-                        <!-- Header Compact -->
                         <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 border-b border-gray-200 md:hidden">
                             <div class="flex items-center gap-1.5">
                                 <i class="fas fa-search text-blue-600 text-xs"></i>
@@ -152,14 +150,11 @@
                         </div>
                         
                         <div class="p-3 sm:p-4 md:p-6">
-                            <!-- Desktop Header -->
                             <h2 class="hidden md:flex text-lg font-bold text-gray-800 mb-4 items-center">
                                 <i class="fas fa-search text-blue-600 mr-2 text-base"></i> <span>Pencarian Koleksi</span>
                             </h2>
                             
-                            <!-- Search Form - Compact untuk Mobile -->
                             <div class="flex flex-col sm:flex-row gap-2 sm:gap-2">
-                                <!-- Search Input -->
                                 <div class="flex-grow min-w-0">
                                     <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
                                     <input type="text" name="q" value="<%= query.q || '' %>"
@@ -167,7 +162,6 @@
                                         placeholder="Cari buku...">
                                 </div>
 
-                                <!-- Search By - Compact -->
                                 <div class="w-full sm:w-auto sm:min-w-[120px] md:min-w-[140px]">
                                     <select name="searchBy" class="w-full p-2 sm:p-2.5 text-xs sm:text-sm md:text-base bg-gray-50 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="title" <%= query.searchBy === 'title' ? 'selected' : '' %>>Judul</option>
@@ -177,7 +171,6 @@
                                     </select>
                                 </div>
 
-                                <!-- Match Type - Compact -->
                                 <div class="w-full sm:w-auto sm:min-w-[140px] md:min-w-[160px]">
                                     <select name="matchType" class="w-full p-2 sm:p-2.5 text-xs sm:text-sm md:text-base bg-gray-50 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="contains" <%= query.matchType === 'contains' ? 'selected' : '' %>>Salah Satu Isi</option>
@@ -187,7 +180,6 @@
                                     </select>
                                 </div>
 
-                                <!-- Search Button - Compact -->
                                 <div class="w-full sm:w-auto sm:min-w-[80px] md:min-w-[100px]">
                                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 rounded-md sm:rounded-lg font-semibold sm:font-bold w-full sm:w-auto transition shadow-sm text-xs sm:text-sm md:text-base flex items-center justify-center gap-1.5">
                                         <i class="fas fa-search text-[10px] sm:text-xs"></i> <span>Cari</span>
@@ -195,9 +187,7 @@
                                 </div>
                             </div>
 
-                            <!-- Sorting Options - Di dalam box, di bawah search form -->
                             <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
-                                <!-- Mobile: Compact Layout -->
                                 <div class="block sm:hidden">
                                     <label class="text-[11px] font-semibold text-gray-700 flex items-center mb-2">
                                         <i class="fas fa-sort text-blue-600 mr-1.5 text-[10px]"></i> 
@@ -223,7 +213,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Desktop: Horizontal Layout -->
                                 <div class="hidden sm:flex sm:items-center sm:justify-between sm:gap-3">
                                     <label class="text-xs md:text-sm font-semibold text-gray-700 flex items-center flex-shrink-0">
                                         <i class="fas fa-sort text-blue-600 mr-2 text-xs md:text-sm"></i> 
@@ -253,16 +242,13 @@
                         </div>
         </div>
 
-                    <!-- Product Container (Scrollable) -->
                     <div class="flex-1 md:overflow-y-auto md:max-h-[calc(100vh-250px)] md:pr-2">
-            <!-- LIST BUKU -->
             <div class="space-y-4">
                 <% if (books.length > 0) { %>
                     <% books.forEach(book => { %>
                         <a href="/books/detail/<%= book.id %>?id_ruangan=<%= query.id_ruangan %>&origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>"
                             class="block bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 flex flex-row gap-3 group cursor-pointer active:scale-[0.98] overflow-hidden sm:rounded-lg sm:border-gray-200 sm:hover:border-blue-400 sm:hover:shadow-md sm:transition sm:active:scale-100 sm:p-4 sm:gap-4 p-3"
                                 >
-                                        <!-- Cover - Compact untuk mobile, normal untuk desktop -->
                                         <div class="w-16 h-20 sm:w-24 sm:h-32 bg-gradient-to-br from-gray-50 to-gray-100 sm:bg-gray-100 rounded-lg sm:rounded border border-gray-200 sm:border overflow-hidden flex justify-center items-center flex-shrink-0 shadow-sm sm:shadow-none">
                                 <% if (book.image) { %>
                                                 <img src="<%= book.image_full_path %>" class="w-full h-full object-cover sm:object-contain" alt="<%= book.title %>">
@@ -274,37 +260,30 @@
                                 <% } %>
                             </div>
 
-                                        <!-- Info - Compact layout untuk mobile, normal untuk desktop -->
                                         <div class="flex-grow text-xs sm:text-sm min-w-0 flex flex-col">
                                             <h4 class="text-sm sm:text-base font-bold text-blue-700 group-hover:text-blue-800 sm:group-hover:text-blue-700 group-hover:underline cursor-pointer mb-1.5 sm:mb-2 line-clamp-2 leading-tight sm:leading-normal"
                                                 onclick="window.location.href='/book/<%= book.id %>?origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>'">
                                     <%= book.title %>
                             </h4>
                                             
-                                            <!-- Info Compact untuk Mobile, Grid untuk Desktop -->
                                             <div class="space-y-1 sm:grid sm:grid-cols-1 sm:gap-y-1 text-gray-600">
-                                                <!-- Kategori -->
                                                 <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
                                                     <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Kategori</span>
                                                     <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.Category ? book.Category.name : '-' %></span>
                                                 </div>
                                                 
-                                                <!-- Pengarang -->
                                                 <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
                                                     <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Pengarang</span>
                                                     <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.Authors.map(a => a.name).join(", ") %></span>
                                                 </div>
                                                 
-                                                <!-- Penerbitan -->
                                                 <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
                                                     <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Penerbitan</span>
                                                     <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.publish_place %> : <%= book.Publishers.map(p => p.name).join(", ") %>, <%= book.publish_year %></span>
                                                 </div>
                                     </div>
 
-                                            <!-- Stock Section Mobile - Di bawah penerbitan (hanya untuk mobile) -->
                                             <div class="mt-2 pt-2 border-t border-gray-100 sm:hidden">
-                                                <!-- Stock Badge -->
                                                 <div class="flex items-center gap-2 mb-1.5">
                                                     <span class="text-[9px] font-semibold text-gray-500">Ketersediaan:</span>
                                                     <span class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">
@@ -312,7 +291,6 @@
                                                     </span>
                                                 </div>
 
-                                                <!-- Call Number Badge -->
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[9px] rounded-md border border-gray-200 font-mono truncate max-w-full">
                                                         <%= book.call_number %>
@@ -321,7 +299,6 @@
                                             </div>
                             </div>
 
-                                        <!-- Stock Section Desktop - Di samping kanan (hanya untuk desktop) -->
                                         <div class="hidden sm:block sm:text-right sm:w-40 border-l border-gray-100 pl-4 flex-shrink-0">
                                             <span class="text-xs font-semibold text-gray-500 block mb-1">Ketersediaan</span>
                                             <div class="text-xs text-blue-600 font-medium mb-2">
@@ -344,8 +321,7 @@
                         </div>
             </div>
 
-                    <!-- PAGINATION (Outside scrollable container) -->
-            <% if (totalPages > 1) { %>
+                    <% if (totalPages > 1) { %>
                         <div class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-1 sm:gap-2 flex-shrink-0">
                     
                     <% if (currentPage > 1) { %>

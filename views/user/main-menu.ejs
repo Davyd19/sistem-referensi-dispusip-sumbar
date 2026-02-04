@@ -1,44 +1,121 @@
 <%- include('partials/header') %>
 
-<div class="w-full px-4 sm:px-6 md:w-[90%] md:mx-auto py-8 md:py-12 min-h-[70vh] flex flex-col justify-center">
+</main>
+
+<style>
+    /* HACK: Sembunyikan elemen main pertama (bawaan header) */
+    body > main:first-of-type {
+        display: none !important;
+    }
+
+    /* Animasi Background Blob */
+    @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+    .animation-delay-4000 {
+        animation-delay: 4s;
+    }
+
+    /* Animasi Fade In Up */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-enter {
+        opacity: 0;
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+
+<div class="relative w-full min-h-[calc(100vh-64px)] flex flex-col justify-center items-center overflow-hidden bg-slate-50 py-8">
     
-    <div class="text-center mb-10 md:mb-16">
-        <h1 class="text-2xl md:text-4xl font-extrabold text-gray-800 mb-2">
-            Selamat Datang di <span class="text-blue-600">Perpustakaan Digital</span>
-        </h1>
-        <p class="text-gray-500 text-sm md:text-base">Silakan pilih layanan yang ingin Anda akses hari ini</p>
-        <div class="h-1.5 w-20 bg-blue-600 mx-auto mt-4 rounded-full"></div>
-    </div>
+    <div class="absolute -top-10 -left-10 w-48 h-48 md:w-80 md:h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+    <div class="absolute -top-10 -right-10 w-48 h-48 md:w-80 md:h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+    <div class="absolute -bottom-20 left-1/2 transform -translate-x-1/2 w-48 h-48 md:w-80 md:h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-
-        <a href="/pilih-ruangan" class="group relative bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-2">
-            <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors duration-300">
-                <i class="fas fa-door-open text-2xl text-indigo-600 group-hover:text-white"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-700">OPAC RUANGAN</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">
-                Informasi ketersediaan ruang baca, ruang diskusi, dan fasilitas area perpustakaan lainnya.
+    <div class="relative z-10 w-full px-4 sm:px-6 md:w-[90%] lg:max-w-6xl md:mx-auto py-12">
+        
+        <div class="text-center mb-16 animate-enter" style="animation-delay: 0.1s;">
+            <h1 class="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">
+                Selamat Datang di <br class="hidden md:block" />
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+                    SIULAN
+                </span>
+            </h1>
+            <p class="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+                Pusat layanan informasi dan referensi Dinas Kearsipan dan Perpustakaan Provinsi Sumatera Barat.
             </p>
-            <div class="mt-6 flex items-center text-indigo-600 font-semibold text-sm">
-                Lihat Ruangan <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
-            </div>
-        </a>
+        </div>
 
-        <a href="/buku-tamu" class="group relative bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-2">
-            <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors duration-300">
-                <i class="fas fa-user-edit text-2xl text-emerald-600 group-hover:text-white"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-emerald-700">BUKU TAMU</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">
-                Isi data kunjungan Anda untuk membantu kami meningkatkan kualitas layanan perpustakaan.
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <a href="/pilih-ruangan" class="group relative animate-enter" style="animation-delay: 0.2s;">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-500 group-hover:scale-105"></div>
+                <div class="relative h-full bg-white/80 backdrop-blur-xl border border-white/50 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/90">
+                    <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-all duration-300 shadow-inner group-hover:shadow-lg group-hover:scale-110">
+                        <i class="fas fa-door-open text-3xl text-blue-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-700 transition-colors">OPAC Ruangan</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Cari buku dan informasi ketersediaan koleksi di berbagai ruang baca dan layanan perpustakaan.
+                    </p>
+                    <div class="flex items-center text-blue-600 font-bold text-sm tracking-wide">
+                        AKSES LAYANAN <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/buku-tamu" class="group relative animate-enter" style="animation-delay: 0.3s;">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-500 group-hover:scale-105"></div>
+                <div class="relative h-full bg-white/80 backdrop-blur-xl border border-white/50 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/90">
+                    <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-all duration-300 shadow-inner group-hover:shadow-lg group-hover:scale-110">
+                        <i class="fas fa-user-edit text-3xl text-emerald-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors">Buku Tamu</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Catat kunjungan Anda secara digital untuk membantu kami meningkatkan kualitas pelayanan.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-bold text-sm tracking-wide">
+                        ISI KEHADIRAN <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/admin/login" class="group relative animate-enter" style="animation-delay: 0.4s;">
+                <div class="absolute inset-0 bg-gradient-to-r from-rose-500 to-red-600 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-500 group-hover:scale-105"></div>
+                <div class="relative h-full bg-white/80 backdrop-blur-xl border border-white/50 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/90">
+                    <div class="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-rose-600 transition-all duration-300 shadow-inner group-hover:shadow-lg group-hover:scale-110">
+                        <i class="fas fa-user-shield text-3xl text-rose-600 group-hover:text-white transition-colors duration-300"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-rose-700 transition-colors">Login Admin</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                        Area khusus administrator untuk pengelolaan data koleksi, laporan, dan konfigurasi sistem.
+                    </p>
+                    <div class="flex items-center text-rose-600 font-bold text-sm tracking-wide">
+                        MASUK ADMIN <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- <div class="mt-16 text-center animate-enter" style="animation-delay: 0.6s;">
+            <p class="text-slate-400 text-sm">
+                &copy; <%= new Date().getFullYear() %> Dinas Kearsipan dan Perpustakaan Provinsi Sumatera Barat
             </p>
-            <div class="mt-6 flex items-center text-emerald-600 font-semibold text-sm">
-                Isi Kehadiran <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
-            </div>
-        </a>
+        </div> -->
 
     </div>
 </div>
 
+<main class="hidden">
 <%- include('partials/footer') %>

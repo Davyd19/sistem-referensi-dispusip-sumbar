@@ -35,18 +35,15 @@
                 </select>
             </div>
             <div class="flex-1">
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cari Judul / Kode</label>
-                <input type="text" id="searchBox" placeholder="Ketik judul buku..." class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cari Judul / Pengarang / No.Panggil</label>
+                <input type="text" id="searchBox" placeholder="Ketik judul, pengarang, atau no induk..." class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
             
-            <div class="flex-none w-40">
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Durasi Pinjam</label>
-                <select name="duration" class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-blue-50 text-blue-700 font-semibold cursor-pointer">
-                    <option value="1">1 Bulan</option>
-                    <option value="2">2 Bulan</option>
-                    <option value="3">3 Bulan</option>
-                    <option value="6">6 Bulan</option>
-                    <option value="12" selected>12 Bulan</option> </select>
+            <div class="flex-none w-48">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Kembali</label>
+                <input type="date" name="due_date" required 
+                    min="<%= new Date().toISOString().split('T')[0] %>"
+                    class="w-full border border-gray-300 rounded-lg p-2 text-sm bg-blue-50 text-blue-700 font-semibold cursor-pointer focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
     </div>
@@ -60,9 +57,9 @@
                             <input id="checkbox-all" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer">
                         </th>
                         <th scope="col" class="px-6 py-3">Judul Buku</th>
+                        <th scope="col" class="px-6 py-3">Pengarang</th>
                         <th scope="col" class="px-6 py-3 text-center">No. Induk</th>
                         <th scope="col" class="px-6 py-3 text-center">No. Panggil</th>
-                        <th scope="col" class="px-6 py-3 text-center">Tahun</th>
                     </tr>
                 </thead>
                 <tbody id="booksTableBody">
@@ -71,12 +68,20 @@
                         const callNum = (copy.Book && copy.Book.call_number) ? copy.Book.call_number : '';
                         const firstChar = callNum.trim().charAt(0);
                         const category = isNaN(parseInt(firstChar)) ? 'other' : firstChar;
+                        
                         const titleLower = copy.Book ? copy.Book.title.toLowerCase() : '';
                         const noIndukLower = copy.no_induk.toLowerCase();
+
+                        // Ambil data pengarang & siapkan untuk search
+                        let authors = '-';
+                        if (copy.Book && copy.Book.Authors && copy.Book.Authors.length > 0) {
+                            authors = copy.Book.Authors.map(a => a.name).join(', ');
+                        }
+                        const authorLower = authors.toLowerCase();
                     %>
                     <tr class="bg-white border-b hover:bg-gray-50 book-row cursor-pointer" 
                         data-category="<%= category %>" 
-                        data-search="<%= titleLower %> <%= noIndukLower %>"
+                        data-search="<%= titleLower %> <%= noIndukLower %> <%= authorLower %>"
                         onclick="toggleRow(this)">
                         
                         <td class="w-4 p-4">
@@ -85,14 +90,16 @@
                         <td class="px-6 py-4 font-medium text-gray-900">
                             <%= copy.Book ? copy.Book.title : 'Judul Error' %>
                         </td>
+                        
+                        <td class="px-6 py-4 text-gray-700">
+                            <%= authors %>
+                        </td>
+
                         <td class="px-6 py-4 text-center font-mono text-xs">
                             <%= copy.no_induk %>
                         </td>
                         <td class="px-6 py-4 text-center font-bold text-blue-600">
                             <%= callNum || '-' %>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <%= copy.Book ? copy.Book.publish_year : '-' %>
                         </td>
                     </tr>
                     <% }) %>

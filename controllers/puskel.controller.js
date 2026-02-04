@@ -21,6 +21,16 @@ const toTitleCase = (str) => {
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
+// [BARU] Helper Format Tanggal Indonesia (DD/MM/YYYY)
+const formatDateID = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+
 const standardizeShelfLocation = (rawLocation) => {
     if (rawLocation == null) return null;
     let loc = String(rawLocation).replace(/['"]+/g, '').trim();
@@ -34,13 +44,31 @@ module.exports = {
     // ==========================================
     index: async (req, res) => {
         try {
+            const { search, sort } = req.query;
+
+            let orderQuery = [['updatedAt', 'DESC']]; 
+            if (sort === 'title_asc') orderQuery = [[{ model: Book }, 'title', 'ASC']];
+            if (sort === 'title_desc') orderQuery = [[{ model: Book }, 'title', 'DESC']];
+            if (sort === 'oldest') orderQuery = [['updatedAt', 'ASC']];
+
+            let bookWhere = {};
+            if (search) {
+                bookWhere = {
+                    [Op.or]: [
+                        { title: { [Op.iLike]: `%${search}%` } },
+                        { isbn: { [Op.like]: `%${search}%` } }
+                    ]
+                };
+            }
+
             const copies = await BookCopy.findAll({
                 where: {
                     status: { [Op.or]: ['tersedia_puskel', 'dipinjam_puskel'] }
                 },
                 include: [
                     { 
-                        model: Book, 
+                        model: Book,
+                        where: bookWhere, 
                         attributes: ['title', 'isbn', 'publish_year', 'call_number'],
                         include: [
                             { model: Author, as: 'Authors' }, 
@@ -55,13 +83,14 @@ module.exports = {
                         include: ['institution'] 
                     }
                 ],
-                order: [['updatedAt', 'DESC']]
+                order: orderQuery 
             });
 
             res.render('admin/puskel/index', { 
                 copies, 
                 title: 'Logistik Pustaka Keliling',
-                active: 'logistik'
+                active: 'logistik',
+                query: req.query 
             });
         } catch (error) {
             console.error(error);
@@ -70,11 +99,10 @@ module.exports = {
     },
 
     // ==========================================
-    // 2. DATA PEMINJAM (LEMBAGA) - LOGIKA FILTER
+    // 2. DATA PEMINJAM (LEMBAGA)
     // ==========================================
     listBorrowers: async (req, res) => {
         try {
-            // Ambil SEMUA Lembaga (Tanpa filter 'active' di query)
             const allInstitutions = await Institution.findAll({
                 include: [{
                     model: PuskelLoan,
@@ -89,7 +117,6 @@ module.exports = {
                 order: [['name', 'ASC']]
             });
 
-            // FILTER: Tampilkan (Baru OR Ada Aktif). Sembunyikan (Semua Selesai).
             const activeData = allInstitutions.map(inst => {
                 const loans = inst.PuskelLoans || [];
                 const hasActive = loans.some(l => l.status === 'active');
@@ -97,7 +124,6 @@ module.exports = {
 
                 if (isNew || hasActive) {
                     const plainInst = inst.get({ plain: true });
-                    // Hanya tampilkan hitungan buku yang sedang dipinjam (active)
                     plainInst.PuskelLoans = plainInst.PuskelLoans.filter(l => l.status === 'active');
                     return plainInst;
                 }
@@ -168,22 +194,21 @@ module.exports = {
     },
 
     // ==========================================
-    // 3. LOGISTIK & SIRKULASI (SELECTION PAGE & BATCH LOAN)
+    // 3. LOGISTIK & SIRKULASI
     // ==========================================
     
-    // [BARU] HALAMAN PILIH BUKU (SELECTION PAGE)
     showLoanSelection: async (req, res) => {
         try {
             const { institution_id } = req.params;
             const institution = await Institution.findByPk(institution_id);
             if (!institution) return res.status(404).send("Lembaga tidak ditemukan");
 
-            // Ambil semua buku tersedia + call_number untuk filter
             const availableBooks = await BookCopy.findAll({
                 where: { status: 'tersedia_puskel' },
                 include: [{ 
                     model: Book, 
-                    attributes: ['title', 'isbn', 'call_number', 'publish_year'] 
+                    attributes: ['title', 'isbn', 'call_number', 'publish_year'],
+                    include: [{ model: Author, as: 'Authors' }] 
                 }],
                 order: [[{ model: Book }, 'title', 'ASC']]
             });
@@ -200,29 +225,34 @@ module.exports = {
         }
     },
 
-    // [UPDATE] PROSES PINJAM BANYAK BUKU (BATCH)
     loanBook: async (req, res) => {
         try {
-            const { institution_id, book_copy_ids, duration } = req.body;
+            const { institution_id, book_copy_ids, due_date } = req.body;
             
             if (!book_copy_ids) {
                 return res.send('<script>alert("Pilih minimal satu buku!"); window.history.back();</script>');
             }
 
-            // Normalisasi ke array (jika user pilih 1, HTML kirim string)
-            const ids = Array.isArray(book_copy_ids) ? book_copy_ids : [book_copy_ids];
+            if (!due_date) {
+                return res.send('<script>alert("Harap tentukan tanggal pengembalian!"); window.history.back();</script>');
+            }
 
             const loanDate = new Date();
-            const dueDate = new Date();
-            dueDate.setMonth(dueDate.getMonth() + parseInt(duration));
+            const selectedDueDate = new Date(due_date);
+            loanDate.setHours(0,0,0,0); 
 
-            // Loop simpan setiap buku
+            if (selectedDueDate < loanDate) {
+                 return res.send('<script>alert("Tanggal kembali tidak boleh kurang dari hari ini!"); window.history.back();</script>');
+            }
+
+            const ids = Array.isArray(book_copy_ids) ? book_copy_ids : [book_copy_ids];
+
             for (const copyId of ids) {
                 await PuskelLoan.create({
                     book_copy_id: copyId,
                     institution_id,
-                    loan_date: loanDate,
-                    due_date: dueDate,
+                    loan_date: new Date(), 
+                    due_date: due_date,    
                     status: 'active'
                 });
 
@@ -302,7 +332,7 @@ module.exports = {
                 }
                 successCount++;
             }
-            res.send(`<script>alert("Berhasil memproses ${successCount} buku ke Puskel!"); window.location.href="/admin/puskel";</script>`);
+            res.redirect('/admin/puskel?msg=success');
         } catch (error) {
             console.error("Error addStock:", error);
             res.status(500).send("Gagal memuat buku: " + error.message);
@@ -322,9 +352,9 @@ module.exports = {
     },
 
     // ==========================================
-    // 4. CRUD MASTER BUKU (Agar Route tidak error)
+    // CRUD MASTER BUKU
     // ==========================================
-    showAddPage: async (req, res) => { /* Placeholder: Logika CRUD sama seperti sebelumnya */ res.send("Fitur Add Manual"); },
+    showAddPage: async (req, res) => { res.send("Fitur Add Manual"); },
     addBook: async (req, res) => { res.send("Fitur Add Book"); },
     showEditPage: async (req, res) => { res.send("Fitur Edit Page"); },
     updateBook: async (req, res) => { res.send("Fitur Update Book"); },
@@ -420,11 +450,10 @@ module.exports = {
                 }
                 countSuccess++;
             }
-            res.send(`<script>alert("Berhasil import ${countSuccess} buku ke Puskel!"); window.location.href="/admin/puskel";</script>`);
+            res.redirect('/admin/puskel?msg=success');
         } catch (error) { res.status(500).send('Gagal import: ' + error.message); }
     },
 
-    // [BARU] EXPORT DATA PEMINJAMAN PER LEMBAGA (CUSTOM FORMAT)
     exportLoanByInstitution: async (req, res) => {
         try {
             const { id } = req.params;
@@ -433,13 +462,13 @@ module.exports = {
                     model: PuskelLoan,
                     as: 'PuskelLoans',
                     where: { status: 'active' },
-                    required: false, // Tetap export meski kosong (nanti excelnya cuma header)
+                    required: false, 
                     include: [{
                         model: BookCopy,
                         as: 'bookCopy',
                         include: [{ 
                             model: Book, 
-                            include: [{ model: Author, as: 'Authors' }] // Perlu Author untuk kolom Pengarang
+                            include: [{ model: Author, as: 'Authors' }] 
                         }]
                     }]
                 }]
@@ -447,11 +476,9 @@ module.exports = {
 
             if (!institution) return res.status(404).send("Lembaga tidak ditemukan");
 
-            // --- SETUP EXCEL ---
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Daftar Koleksi');
 
-            // 1. JUDUL & KOP (Row 1-2)
             const currentYear = new Date().getFullYear();
             worksheet.mergeCells('A1:G1');
             const titleCell = worksheet.getCell('A1');
@@ -465,25 +492,19 @@ module.exports = {
             subTitleCell.font = { name: 'Arial', size: 12, bold: true };
             subTitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-            // 2. INFORMASI LEMBAGA (Row 4-6)
-            // Kabupaten
             worksheet.getCell('A4').value = 'Kabupaten/Kota';
-            worksheet.getCell('C4').value = ': Padang'; // Bisa disesuaikan
+            worksheet.getCell('C4').value = ': Padang'; 
             
-            // Pos Layanan (Nama Lembaga)
             worksheet.getCell('A5').value = 'Pos Layanan';
             worksheet.getCell('C5').value = ': ' + institution.name;
 
-            // Hari/Tanggal
             const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             worksheet.getCell('A6').value = 'Hari/Tanggal';
             worksheet.getCell('C6').value = ': ' + today;
 
-            // 3. HEADER TABEL (Row 8)
             const headerRow = worksheet.getRow(8);
             headerRow.values = ['NO', 'JUDUL', 'PENGARANG', 'NO. INDUK', 'CALL NUMBER', 'EKS.', 'KET.*)'];
             
-            // Style Header
             headerRow.eachCell((cell) => {
                 cell.font = { bold: true };
                 cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -495,7 +516,6 @@ module.exports = {
                 };
             });
 
-            // 4. ISI DATA (Row 9 dst)
             let rowIndex = 9;
             if (institution.PuskelLoans && institution.PuskelLoans.length > 0) {
                 institution.PuskelLoans.forEach((loan, index) => {
@@ -504,16 +524,15 @@ module.exports = {
                     
                     const row = worksheet.getRow(rowIndex);
                     row.values = [
-                        index + 1,                                  // NO
-                        book ? book.title : 'Judul Error',          // JUDUL
-                        authors,                                    // PENGARANG
-                        loan.bookCopy ? loan.bookCopy.no_induk : '-', // NO INDUK
-                        book ? book.call_number : '-',              // CALL NUMBER
-                        1,                                          // EKS (Selalu 1 per baris)
-                        ''                                          // KET
+                        index + 1,                                  
+                        book ? book.title : 'Judul Error',          
+                        authors,                                    
+                        loan.bookCopy ? loan.bookCopy.no_induk : '-', 
+                        book ? book.call_number : '-',              
+                        1,                                          
+                        ''                                          
                     ];
 
-                    // Style Data Row (Border & Alignment)
                     row.eachCell((cell, colNumber) => {
                         cell.border = {
                             top: { style: 'thin' },
@@ -521,7 +540,6 @@ module.exports = {
                             bottom: { style: 'thin' },
                             right: { style: 'thin' }
                         };
-                        // Kolom Judul & Pengarang (2 & 3) rata kiri, sisanya tengah
                         if (colNumber === 2 || colNumber === 3) {
                             cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
                         } else {
@@ -533,16 +551,14 @@ module.exports = {
                 });
             }
 
-            // 5. ATUR LEBAR KOLOM
-            worksheet.getColumn(1).width = 5;  // No
-            worksheet.getColumn(2).width = 40; // Judul
-            worksheet.getColumn(3).width = 25; // Pengarang
-            worksheet.getColumn(4).width = 20; // No Induk
-            worksheet.getColumn(5).width = 20; // Call Number
-            worksheet.getColumn(6).width = 5;  // Eks
-            worksheet.getColumn(7).width = 10; // Ket
+            worksheet.getColumn(1).width = 5;  
+            worksheet.getColumn(2).width = 40; 
+            worksheet.getColumn(3).width = 25; 
+            worksheet.getColumn(4).width = 20; 
+            worksheet.getColumn(5).width = 20; 
+            worksheet.getColumn(6).width = 5;  
+            worksheet.getColumn(7).width = 10; 
 
-            // --- KIRIM FILE ---
             const filename = `Peminjaman_${institution.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
@@ -561,7 +577,17 @@ module.exports = {
     // ==========================================
     historyBorrowers: async (req, res) => {
         try {
+            const { search } = req.query;
+
+            let institutionWhere = {};
+            if (search) {
+                institutionWhere = {
+                    name: { [Op.iLike]: `%${search}%` } 
+                };
+            }
+
             const allInstitutions = await Institution.findAll({
+                where: institutionWhere,
                 include: [{
                     model: PuskelLoan,
                     as: 'PuskelLoans',
@@ -579,7 +605,15 @@ module.exports = {
                 const activeLoans = loans.filter(l => l.status === 'active');
                 const returnedLoans = loans.filter(l => l.status === 'returned');
 
-                if (activeLoans.length === 0 && returnedLoans.length > 0) {
+                let shouldShow = false;
+
+                if (search) {
+                    shouldShow = returnedLoans.length > 0;
+                } else {
+                    shouldShow = (activeLoans.length === 0 && returnedLoans.length > 0);
+                }
+
+                if (shouldShow) {
                     returnedLoans.sort((a, b) => new Date(b.return_date) - new Date(a.return_date));
                     const lastTransaction = returnedLoans[0];
                     return {
@@ -588,8 +622,9 @@ module.exports = {
                         contact: inst.contact_person,
                         phone: inst.phone,
                         total_books: returnedLoans.length, 
-                        loan_date: lastTransaction ? lastTransaction.loan_date : null,
-                        return_date: lastTransaction ? lastTransaction.return_date : null
+                        // [PERBAIKAN] Gunakan helper formatDateID di sini
+                        loan_date: lastTransaction ? formatDateID(lastTransaction.loan_date) : null,
+                        return_date: lastTransaction ? formatDateID(lastTransaction.return_date) : null
                     };
                 }
                 return null;
@@ -598,7 +633,8 @@ module.exports = {
             res.render('admin/puskel/history', {
                 historyData,
                 title: 'Riwayat Peminjaman',
-                active: 'puskel_history'
+                active: 'puskel_history',
+                query: req.query 
             });
         } catch (error) {
             console.error("Error history:", error); 
