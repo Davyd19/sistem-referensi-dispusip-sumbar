@@ -22,71 +22,130 @@
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition">
             </div>
 
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div class="flex flex-start justify-between gap-4">
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-800 mb-1 flex items-center">
-                            <i class="fas fa-th mr-2 text-indigo-600"></i> Desain Tata Letak Ruangan
-                        </h3>
-                        <p class="text-xs text-gray-600">
-                            Pilih jenis item, blok area di grid, beri nama. Area jadi satu kotak + nama di denah. Klik item untuk hapus; klik-tahan & geser untuk pindah.
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex flex-wrap gap-2" id="modeButtonsWrap">
-                            <button type="button" id="btnAddRack" data-mode="add_rack"
-                                class="mode-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
-                                <i class="fas fa-plus mr-1"></i>Rak
-                            </button>
-                            <button type="button" id="btnAddVisitorTable" data-mode="add_table_visitor"
-                                class="mode-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
-                                <i class="fas fa-users mr-1"></i>Meja Pengunjung
-                            </button>
-                            <button type="button" id="btnAddLibrarianTable" data-mode="add_table_librarian"
-                                class="mode-btn bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
-                                <i class="fas fa-user-tie mr-1"></i>Meja Pustakawan
-                            </button>
-                            <button type="button" id="btnAddGuestTable" data-mode="add_table_guest"
-                                class="mode-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
-                                <i class="fas fa-book-open mr-1"></i>Meja Buku Tamu
-                            </button>
-                            <button type="button" id="btnAddDoor" data-mode="add_door"
-                                class="mode-btn bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-3 py-2 rounded-lg shadow transition">
-                                <i class="fas fa-door-open mr-1"></i>Pintu
-                            </button>
-                        </div>
-                        <button type="button" id="btnClearLayout"
-                            class="bg-white hover:bg-gray-100 text-gray-700 text-sm font-bold px-4 py-2 rounded-lg border border-gray-300 transition">
-                            <i class="fas fa-eraser mr-2"></i>Reset
-                        </button>
-                    </div>
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fas fa-th-large mr-3 text-orange-200"></i> Desain Tata Letak Ruangan
+                    </h3>
+                    <p class="text-orange-100 text-sm mt-1">
+                        Edit denah ruangan di bawah. Tambahkan, pindahkan, ubah nama, atau hapus item sesuai kebutuhan.
+                    </p>
                 </div>
 
-                <div class="mt-4 flex flex-wrap items-end gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Rows</label>
-                        <input id="roomRows" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.rows) ? room.layout_json.rows : 25 %>"
-                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                <div class="p-6 space-y-6">
+                    <!-- Langkah & Tombol -->
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <div class="lg:w-1/2">
+                            <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-list-ol text-orange-500 mr-2"></i> Langkah Menambah Item
+                            </h4>
+                            <ol class="space-y-2 text-sm text-gray-600">
+                                <li class="flex gap-2"><span class="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">1</span> Klik salah satu tombol jenis item di samping (Rak, Meja, atau Pintu).</li>
+                                <li class="flex gap-2"><span class="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">2</span> Di area grid, klik dan tarik untuk memblok area yang diinginkan.</li>
+                                <li class="flex gap-2"><span class="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">3</span> Untuk <b>Rak</b>, isi nama saat diminta. Item lain diberi nama otomatis.</li>
+                            </ol>
+                        </div>
+                        <div class="lg:w-1/2">
+                            <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-mouse-pointer text-orange-500 mr-2"></i> Jenis Item & Alat
+                            </h4>
+                            <div class="flex flex-wrap gap-2" id="modeButtonsWrap">
+                                <button type="button" id="btnAddRack" data-mode="add_rack"
+                                    class="mode-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                                    <i class="fas fa-archive"></i> Rak
+                                </button>
+                                <button type="button" id="btnAddVisitorTable" data-mode="add_table_visitor"
+                                    class="mode-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                                    <i class="fas fa-users"></i> Meja Pengunjung
+                                </button>
+                                <button type="button" id="btnAddLibrarianTable" data-mode="add_table_librarian"
+                                    class="mode-btn bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                                    <i class="fas fa-user-tie"></i> Meja Pustakawan
+                                </button>
+                                <button type="button" id="btnAddGuestTable" data-mode="add_table_guest"
+                                    class="mode-btn bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                                    <i class="fas fa-book-open"></i> Meja Buku Tamu
+                                </button>
+                                <button type="button" id="btnAddDoor" data-mode="add_door"
+                                    class="mode-btn bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+                                    <i class="fas fa-door-open"></i> Pintu
+                                </button>
+                                <button type="button" id="btnClearLayout"
+                                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-lg border border-gray-300 transition flex items-center gap-2">
+                                    <i class="fas fa-eraser"></i> Reset Semua
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Cols</label>
-                        <input id="roomCols" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.cols) ? room.layout_json.cols : 40 %>"
-                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+
+                    <!-- Ukuran Grid -->
+                    <div class="flex flex-wrap items-end gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ukuran Grid Denah</label>
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <span class="text-xs text-gray-500 block mb-1">Baris</span>
+                                    <input id="roomRows" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.rows) ? room.layout_json.rows : 25 %>"
+                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm">
+                                </div>
+                                <span class="text-gray-400 font-bold">×</span>
+                                <div>
+                                    <span class="text-xs text-gray-500 block mb-1">Kolom</span>
+                                    <input id="roomCols" type="number" min="4" max="60" value="<%= (room.layout_json && room.layout_json.cols) ? room.layout_json.cols : 40 %>"
+                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-xs text-gray-500 max-w-md">
-                        <div class="font-medium text-gray-600 mb-0.5">Tips:</div>
-                        <ul class="list-disc list-inside space-y-0.5 text-gray-500">
-                            <li>Drag untuk pilih area, lalu isi nama. Klik item untuk hapus; klik-tahan & geser untuk pindah.</li>
-                            <li><b>Rak & meja</b> minimal 2×2 kotak.</li>
-                            <li><b>Pintu</b> minimal 1×2 atau 2×1 kotak (horizontal atau vertikal).</li>
+
+                    <!-- Tips Interaksi -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h4 class="text-sm font-bold text-amber-800 mb-2 flex items-center">
+                            <i class="fas fa-hand-pointer text-amber-600 mr-2"></i> Cara Berinteraksi dengan Objek di Denah
+                        </h4>
+                        <div class="grid sm:grid-cols-3 gap-3 text-sm">
+                            <div class="flex items-start gap-2">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-white border border-amber-200 flex items-center justify-center text-amber-600"><i class="fas fa-mouse-pointer text-xs"></i></span>
+                                <div>
+                                    <b class="text-amber-900">Klik sekali</b>
+                                    <p class="text-amber-800/90 text-xs">Menampilkan konfirmasi untuk menghapus objek dari denah.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-white border border-amber-200 flex items-center justify-center text-amber-600"><i class="fas fa-mouse text-xs"></i></span>
+                                <div>
+                                    <b class="text-amber-900">Klik 2× (double-click)</b>
+                                    <p class="text-amber-800/90 text-xs">Membuka popup untuk mengubah nama objek.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-white border border-amber-200 flex items-center justify-center text-amber-600"><i class="fas fa-arrows-alt text-xs"></i></span>
+                                <div>
+                                    <b class="text-amber-900">Klik tahan & geser</b>
+                                    <p class="text-amber-800/90 text-xs">Memindahkan objek ke posisi lain di denah.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ketentuan Ukuran -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 flex items-center">
+                            <i class="fas fa-ruler-combined text-slate-600 mr-2"></i> Ketentuan Ukuran Minimal
+                        </h4>
+                        <ul class="space-y-1.5 text-sm text-slate-700">
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500 text-xs"></i> <b>Rak & Meja</b>: Minimal 2×2 kotak (2 baris × 2 kolom).</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500 text-xs"></i> <b>Pintu</b>: Minimal 2 kotak berderet — horizontal (1×2) atau vertikal (2×1).</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-info-circle text-blue-500 text-xs"></i> Objek tidak boleh saling bertumpuk. Pilih area yang kosong.</li>
                         </ul>
                     </div>
                 </div>
 
                 <input type="hidden" name="layout_json" id="layoutJsonInput" value="">
 
-                <div class="mt-4">
-                    <div id="denahViewport" class="rounded-xl border border-gray-200 bg-white overflow-auto p-3 max-w-full max-h-[min(90vh,960px)]">
+                <div class="px-6 pb-6">
+                    <div id="denahViewport" class="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-auto p-4 max-w-full max-h-[min(90vh,960px)]">
                         <div id="gridContainer" class="select-none inline-block"></div>
                     </div>
                     <p id="layoutStatus" class="text-xs text-gray-500 mt-2"></p>
@@ -95,7 +154,7 @@
 
             <hr class="border-gray-200">
 
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="bg-white p-6 rounded-xl border border-gray-200">
                 <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
                     <i class="fas fa-user-cog mr-2"></i> Update Akun Admin
                 </h3>
@@ -171,7 +230,7 @@
 </style>
 
 <script>
-(() => {
+(async () => {
   const gridEl = document.getElementById('gridContainer');
   const statusEl = document.getElementById('layoutStatus');
   const layoutInput = document.getElementById('layoutJsonInput');
@@ -210,7 +269,11 @@
   let isMouseDown = false;
   let dragStart = null, dragEnd = null;
   let movingItemId = null, moveStartCell = null, dropTarget = null;
+  let hasMovedWhileDragging = false;
   let isModalOpen = false;
+  let pendingDeleteTimeout = null;
+  let pendingClickItemId = null;
+  let pendingClickTime = 0;
 
   const modal = {
     overlay: document.getElementById('rdModalOverlay'),
@@ -229,6 +292,7 @@
     desc,
     hint,
     showInput = true,
+    hideCancel = false,
     placeholder,
     defaultValue,
     okText = 'Simpan',
@@ -256,6 +320,7 @@
 
       modal.btnOk.textContent = okText;
       modal.btnOk.className = `${okClass} disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition`;
+      if (modal.btnCancel) modal.btnCancel.classList.toggle('hidden', !!hideCancel);
 
       const isValid = () => (showInput ? (validate ? !!validate(modal.input.value) : !!modal.input.value.trim()) : true);
       const update = () => { modal.btnOk.disabled = !isValid(); };
@@ -310,6 +375,15 @@
     });
   };
 
+  const showAlert = (title, desc) => showModal({
+    title: title || 'Perhatian',
+    desc: desc || '',
+    showInput: false,
+    hideCancel: true,
+    okText: 'Mengerti',
+    okClass: 'bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300',
+  });
+
   const rectNormalize = (a, b) => ({ r1: Math.min(a.r, b.r), c1: Math.min(a.c, b.c), r2: Math.max(a.r, b.r), c2: Math.max(a.c, b.c) });
   const rectContains = (rect, r, c) => r >= rect.r1 && r <= rect.r2 && c >= rect.c1 && c <= rect.c2;
   const rectOverlap = (a, b) => !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2);
@@ -354,7 +428,7 @@
     return 'rd-item--rack';
   };
 
-  const ensureGridSize = () => {
+  const ensureGridSize = async () => {
     const nr = Math.max(4, Math.min(60, Number(rowsInput.value) || 25));
     const nc = Math.max(4, Math.min(60, Number(colsInput.value) || 40));
     if (nr < state.rows || nc < state.cols) {
@@ -362,7 +436,7 @@
       if (wouldCut) {
         rowsInput.value = String(state.rows);
         colsInput.value = String(state.cols);
-        alert('Rows/Cols tidak boleh dikecilkan karena ada objek di area tersebut. Hapus atau pindahkan objek terlebih dahulu.');
+        await showAlert('Perhatian', 'Rows/Cols tidak boleh dikecilkan karena ada objek di area tersebut. Hapus atau pindahkan objek terlebih dahulu.');
         return;
       }
     }
@@ -387,17 +461,17 @@
   const addItem = async (rect, subType) => {
     const occupied = getOccupiedRects();
     if (occupied.some(it => rectOverlap(it, rect))) {
-      alert('Area yang dipilih sudah terpakai. Pilih area lain.');
+      await showAlert('Perhatian', 'Area yang dipilih sudah terpakai. Pilih area lain.');
       return false;
     }
     const baseType = subType === 'rack' ? 'rack' : subType === 'door' ? 'door' : 'table';
     const h = rect.r2 - rect.r1 + 1, w = rect.c2 - rect.c1 + 1;
     if ((baseType === 'rack' || baseType === 'table') && (h < 2 || w < 2)) {
-      alert('Rak dan meja minimal 2×2 kotak. Pilih area yang lebih besar.');
+      await showAlert('Perhatian', 'Rak dan meja minimal 2×2 kotak. Pilih area yang lebih besar.');
       return false;
     }
     if (baseType === 'door' && !((h >= 2 && w >= 1) || (h >= 1 && w >= 2))) {
-      alert('Pintu minimal 1×2 atau 2×1 kotak (horizontal atau vertikal). Pilih area 2 kotak berderet.');
+      await showAlert('Perhatian', 'Pintu minimal 1×2 atau 2×1 kotak (horizontal atau vertikal). Pilih area 2 kotak berderet.');
       return false;
     }
     let defaultName = 'Rak ' + (state.items.filter(x => x.type === 'rack').length + 1);
@@ -566,8 +640,8 @@
     updateModeButtons();
   });
 
-  rowsInput.addEventListener('change', () => { ensureGridSize(); render(); });
-  colsInput.addEventListener('change', () => { ensureGridSize(); render(); });
+  rowsInput.addEventListener('change', async () => { await ensureGridSize(); render(); });
+  colsInput.addEventListener('change', async () => { await ensureGridSize(); render(); });
 
   gridEl.addEventListener('mousedown', (e) => {
     if (isModalOpen) return;
@@ -580,6 +654,7 @@
       movingItemId = itemId;
       moveStartCell = { r: it.r1, c: it.c1 };
       dropTarget = { r: it.r1, c: it.c1 };
+      hasMovedWhileDragging = false;
       resetTempSelection();
       render();
       return;
@@ -591,6 +666,39 @@
     dragStart = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
     dragEnd = { ...dragStart };
     render();
+  });
+
+  gridEl.addEventListener('dblclick', async (e) => {
+    if (isModalOpen) return;
+    const item = e.target.closest('.rd-item');
+    if (!item || item.classList.contains('rd-item--preview')) return;
+    const itemId = item.dataset.itemId;
+    const it = state.items.find(x => x.id === itemId);
+    if (!it) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (pendingDeleteTimeout) {
+      clearTimeout(pendingDeleteTimeout);
+      pendingDeleteTimeout = null;
+    }
+    movingItemId = null;
+    moveStartCell = null;
+    dropTarget = null;
+    const newName = await showModal({
+      title: 'Ubah Nama Objek',
+      desc: `Objek saat ini: \"${it.name}\"`,
+      hint: 'Masukkan nama baru.',
+      showInput: true,
+      placeholder: it.name || '',
+      defaultValue: it.name || '',
+      okText: 'Simpan',
+      okClass: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300',
+      validate: (v) => String(v || '').trim().length > 0,
+    });
+    if (newName) {
+      it.name = newName.trim();
+      render();
+    }
   });
 
   gridEl.addEventListener('mouseover', (e) => {
@@ -606,7 +714,11 @@
     if (isModalOpen) return;
     if (movingItemId && gridEl) {
       const cell = getCellFromMouse(e.clientX, e.clientY);
-      if (cell) { dropTarget = cell; render(); }
+      if (cell) {
+        dropTarget = cell;
+        if (cell.r !== moveStartCell.r || cell.c !== moveStartCell.c) hasMovedWhileDragging = true;
+        render();
+      }
     }
   });
 
@@ -614,21 +726,55 @@
     if (isModalOpen) return;
     if (movingItemId) {
       const it = state.items.find(x => x.id === movingItemId);
-      if (it && dropTarget && (dropTarget.r !== moveStartCell.r || dropTarget.c !== moveStartCell.c)) {
-        if (!tryMoveItem(it, dropTarget.r, dropTarget.c)) alert('Tidak bisa pindah: area tertutup objek lain.');
-      } else if (it && (!dropTarget || (dropTarget.r === moveStartCell.r && dropTarget.c === moveStartCell.c))) {
-        const okDel = await showModal({
-          title: 'Konfirmasi Hapus Objek',
-          desc: `Hapus \"${it.name}\" dari denah?`,
-          hint: null,
-          showInput: false,
-          okText: 'Hapus',
-          okClass: 'bg-red-600 hover:bg-red-700 disabled:bg-red-300',
-          validate: null,
-        });
-        if (okDel) {
-          state.items = state.items.filter(x => x.id !== movingItemId);
+      if (it && hasMovedWhileDragging && dropTarget && (dropTarget.r !== moveStartCell.r || dropTarget.c !== moveStartCell.c)) {
+        if (!tryMoveItem(it, dropTarget.r, dropTarget.c)) await showAlert('Perhatian', 'Tidak bisa pindah: area tertutup objek lain.');
+      } else if (it && !hasMovedWhileDragging) {
+        const itemIdToDel = movingItemId;
+        const now = Date.now();
+        if (pendingClickItemId === itemIdToDel && (now - pendingClickTime) < 500) {
+          pendingClickItemId = null;
+          if (pendingDeleteTimeout) { clearTimeout(pendingDeleteTimeout); pendingDeleteTimeout = null; }
+          movingItemId = null; moveStartCell = null; dropTarget = null;
+          const target = state.items.find(x => x.id === itemIdToDel);
+          if (target) {
+            const newName = await showModal({
+              title: 'Ubah Nama Objek',
+              desc: `Objek saat ini: \"${target.name}\"`,
+              hint: 'Masukkan nama baru.',
+              showInput: true,
+              placeholder: target.name || '',
+              defaultValue: target.name || '',
+              okText: 'Simpan',
+              okClass: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300',
+              validate: (v) => String(v || '').trim().length > 0,
+            });
+            if (newName) { target.name = newName.trim(); }
+          }
+          render();
+          return;
         }
+        pendingClickItemId = itemIdToDel;
+        pendingClickTime = now;
+        if (pendingDeleteTimeout) clearTimeout(pendingDeleteTimeout);
+        pendingDeleteTimeout = setTimeout(async () => {
+          pendingDeleteTimeout = null;
+          pendingClickItemId = null;
+          const target = state.items.find(x => x.id === itemIdToDel);
+          if (!target) return;
+          const okDel = await showModal({
+            title: 'Konfirmasi Hapus Objek',
+            desc: `Hapus \"${target.name}\" dari denah?`,
+            hint: null,
+            showInput: false,
+            okText: 'Hapus',
+            okClass: 'bg-red-600 hover:bg-red-700 disabled:bg-red-300',
+            validate: null,
+          });
+          if (okDel) {
+            state.items = state.items.filter(x => x.id !== itemIdToDel);
+          }
+          render();
+        }, 450);
       }
       movingItemId = null;
       moveStartCell = null;
@@ -648,7 +794,7 @@
     render();
   });
 
-  ensureGridSize();
+  await ensureGridSize();
   render();
   updateModeButtons();
 })();
