@@ -54,7 +54,7 @@ module.exports = {
                 });
             }
 
-            // Parse & validasi sederhana layout (opsional)
+            // Parse & validasi layout (wajib ada denah dengan minimal 1 item)
             let parsedLayout = null;
             if (layout_json && String(layout_json).trim()) {
                 try {
@@ -66,6 +66,14 @@ module.exports = {
                         error: "Format desain ruangan tidak valid (JSON rusak)."
                     });
                 }
+            }
+            const items = parsedLayout && Array.isArray(parsedLayout.items) ? parsedLayout.items : [];
+            if (items.length === 0) {
+                return res.render('super-admin/room_add', {
+                    title: 'Tambah Ruangan',
+                    user: req.session.user,
+                    error: "Desain denah ruangan wajib diisi. Tambahkan minimal satu item (rak, meja, atau pintu) ke denah sebelum menyimpan."
+                });
             }
 
             // Cek apakah username sudah ada

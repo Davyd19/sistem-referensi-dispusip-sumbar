@@ -9,7 +9,7 @@
             <a href="/admin/rooms" class="text-sm text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i> Batal</a>
         </div>
 
-        <form action="/admin/rooms/add" method="POST" class="p-6 space-y-6">
+        <form action="/admin/rooms/add" method="POST" class="p-6 space-y-6" id="formAddRoom">
             <% if (error) { %>
                 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
                     <p><%= error %></p>
@@ -18,7 +18,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Nama Ruangan</label>
-                <input type="text" name="nama_ruangan" required placeholder="Contoh: Ruang Referensi, Ruang Anak"
+                <input type="text" name="nama_ruangan" id="inputNamaRuangan" placeholder="Contoh: Ruang Referensi, Ruang Anak"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                 <p class="text-xs text-gray-500 mt-1">Nama ini akan muncul di halaman pemilihan OPAC.</p>
             </div>
@@ -30,7 +30,7 @@
                             <i class="fas fa-th mr-2 text-indigo-600"></i> Desain Tata Letak Ruangan
                         </h3>
                         <p class="text-xs text-gray-600">
-                            Pilih jenis item, blok area di grid, beri nama. Area jadi satu kotak + nama di denah. Klik item untuk hapus; klik-tahan & geser untuk pindah.
+                            <span class="font-semibold text-amber-700">*Wajib:</span> Tambahkan minimal satu item ke denah sebelum menyimpan ruangan. Pilih jenis item, blok area di grid, beri nama. Klik item untuk hapus; klik-tahan & geser untuk pindah.
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -103,12 +103,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Username Admin</label>
-                        <input type="text" name="username" required placeholder="admin_ref, admin_anak"
+                        <input type="text" name="username" id="inputUsername" placeholder="admin_ref, admin_anak"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input type="password" name="password" required placeholder="******"
+                        <input type="password" name="password" id="inputPassword" placeholder="******"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                 </div>
@@ -118,7 +118,7 @@
             </div>
 
             <div class="flex justify-end pt-4">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition transform active:scale-95">
+                <button type="submit" id="btnSubmitRoom" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition transform active:scale-95">
                     <i class="fas fa-save mr-2"></i> Simpan Data
                 </button>
             </div>
@@ -212,11 +212,12 @@
     desc,
     hint,
     showInput = true,
+    hideCancel = false,
     placeholder,
     defaultValue,
     okText = 'Simpan',
     okClass = 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300',
-    validate, // (value:string) => boolean
+    validate,
   }) => {
     return new Promise((resolve) => {
       if (!modal.overlay) return resolve(null);
@@ -239,6 +240,7 @@
 
       modal.btnOk.textContent = okText;
       modal.btnOk.className = `${okClass} disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition`;
+      if (modal.btnCancel) modal.btnCancel.classList.toggle('hidden', !!hideCancel);
 
       const isValid = () => (showInput ? (validate ? !!validate(modal.input.value) : !!modal.input.value.trim()) : true);
       const update = () => { modal.btnOk.disabled = !isValid(); };
@@ -293,6 +295,15 @@
     });
   };
 
+  const showAlert = (title, desc) => showModal({
+    title: title || 'Perhatian',
+    desc: desc || '',
+    showInput: false,
+    hideCancel: true,
+    okText: 'Mengerti',
+    okClass: 'bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300',
+  });
+
   const rectNormalize = (a, b) => ({ r1: Math.min(a.r, b.r), c1: Math.min(a.c, b.c), r2: Math.max(a.r, b.r), c2: Math.max(a.c, b.c) });
   const rectContains = (rect, r, c) => r >= rect.r1 && r <= rect.r2 && c >= rect.c1 && c <= rect.c2;
   const rectOverlap = (a, b) => !(a.r2 < b.r1 || a.r1 > b.r2 || a.c2 < b.c1 || a.c1 > b.c2);
@@ -302,11 +313,19 @@
     layoutInput.value = JSON.stringify({ version: state.version, rows: state.rows, cols: state.cols, items: state.items });
   };
 
+  const tableStyleFromName = (name) => {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('pustakawan')) return 'librarian';
+    if (n.includes('buku tamu') || n.includes('tamu')) return 'guest';
+    return 'visitor';
+  };
+
   const setStatus = () => {
     const rackCount = state.items.filter(i => i.type === 'rack').length;
-    const tableVisitorCount = state.items.filter(i => i.type === 'table' && i.role === 'visitor').length;
-    const tableLibrarianCount = state.items.filter(i => i.type === 'table' && i.role === 'librarian').length;
-    const tableGuestCount = state.items.filter(i => i.type === 'table' && i.role === 'guest').length;
+    const tables = state.items.filter(i => i.type === 'table');
+    const tableVisitorCount = tables.filter(t => tableStyleFromName(t.name) === 'visitor').length;
+    const tableLibrarianCount = tables.filter(t => tableStyleFromName(t.name) === 'librarian').length;
+    const tableGuestCount = tables.filter(t => tableStyleFromName(t.name) === 'guest').length;
     const doorCount = state.items.filter(i => i.type === 'door').length;
     let modeText = '';
     if (mode === 'add_rack') modeText = ' • Mode: tambah Rak';
@@ -321,9 +340,10 @@
     if (it.type === 'rack') return 'rd-item--rack';
     if (it.type === 'door') return 'rd-item--door';
     if (it.type === 'table') {
-      if (it.role === 'visitor') return 'rd-item--table-visitor';
-      if (it.role === 'librarian') return 'rd-item--table-librarian';
-      if (it.role === 'guest') return 'rd-item--table-guest';
+      const style = tableStyleFromName(it.name);
+      if (style === 'librarian') return 'rd-item--table-librarian';
+      if (style === 'guest') return 'rd-item--table-guest';
+      return 'rd-item--table-visitor';
     }
     return 'rd-item--rack';
   };
@@ -376,10 +396,9 @@
     }
     let defaultName = 'Rak ' + (state.items.filter(x => x.type === 'rack').length + 1);
     let promptMsg = 'Nama Rak:';
-    let role = null;
-    if (subType === 'table_visitor') { role = 'visitor'; defaultName = 'Meja Pengunjung ' + (state.items.filter(x => x.type === 'table' && x.role === 'visitor').length + 1); promptMsg = 'Nama Meja Pengunjung:'; }
-    else if (subType === 'table_librarian') { role = 'librarian'; defaultName = 'Meja Pustakawan ' + (state.items.filter(x => x.type === 'table' && x.role === 'librarian').length + 1); promptMsg = 'Nama Meja Pustakawan:'; }
-    else if (subType === 'table_guest') { role = 'guest'; defaultName = 'Meja Buku Tamu ' + (state.items.filter(x => x.type === 'table' && x.role === 'guest').length + 1); promptMsg = 'Nama Meja Buku Tamu:'; }
+    if (subType === 'table_visitor') { defaultName = 'Meja Pengunjung ' + (state.items.filter(x => x.type === 'table' && /meja pengunjung/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Pengunjung:'; }
+    else if (subType === 'table_librarian') { defaultName = 'Meja Pustakawan ' + (state.items.filter(x => x.type === 'table' && /meja pustakawan|pustakawan/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Pustakawan:'; }
+    else if (subType === 'table_guest') { defaultName = 'Meja Buku Tamu ' + (state.items.filter(x => x.type === 'table' && /meja buku tamu|buku tamu/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Buku Tamu:'; }
     else if (subType === 'door') { defaultName = 'Pintu ' + (state.items.filter(x => x.type === 'door').length + 1); promptMsg = 'Nama Pintu:'; }
     let name = null;
     if (baseType === 'rack') {
@@ -389,7 +408,7 @@
       // selain rak, tidak perlu input nama (otomatis)
       name = defaultName;
     }
-    state.items.push({ id: `${baseType}_${Date.now()}_${Math.random().toString(16).slice(2)}`, type: baseType, role, name, ...rect });
+    state.items.push({ id: `${baseType}_${Date.now()}_${Math.random().toString(16).slice(2)}`, type: baseType, name, ...rect });
     return true;
   };
 
@@ -626,5 +645,32 @@
   ensureGridSize();
   render();
   updateModeButtons();
+
+  const formAddRoom = document.getElementById('formAddRoom');
+  if (formAddRoom) {
+    formAddRoom.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const namaRuangan = (document.getElementById('inputNamaRuangan')?.value || '').trim();
+      const username = (document.getElementById('inputUsername')?.value || '').trim();
+      const password = (document.getElementById('inputPassword')?.value || '').trim();
+      if (!namaRuangan) {
+        await showAlert('Perhatian', 'Nama ruangan wajib diisi.');
+        return;
+      }
+      if (!username) {
+        await showAlert('Perhatian', 'Username admin wajib diisi.');
+        return;
+      }
+      if (!password) {
+        await showAlert('Perhatian', 'Password wajib diisi.');
+        return;
+      }
+      if (state.items.length === 0) {
+        await showAlert('Perhatian', 'Desain denah ruangan wajib diisi. Tambahkan minimal satu item (rak, meja, atau pintu) ke denah sebelum menyimpan.');
+        return;
+      }
+      formAddRoom.submit();
+    });
+  }
 })();
 </script>

@@ -186,17 +186,9 @@
 
   let _raw = <%- JSON.stringify(room.layout_json != null ? room.layout_json : null) %>;
   const initial = (typeof _raw === 'string' ? (() => { try { return JSON.parse(_raw); } catch (e) { return null; } })() : _raw) || null;
-  const inferRoleFromName = (name) => {
-    const n = String(name || '').toLowerCase();
-    if (n.includes('pustakawan')) return 'librarian';
-    if (n.includes('buku tamu') || n.includes('tamu')) return 'guest';
-    if (n.includes('pengunjung')) return 'visitor';
-    return 'visitor';
-  };
   const normItems = (arr) => (Array.isArray(arr) ? arr : []).map(it => ({
     id: it.id || `item_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     type: it.type || 'rack',
-    role: (it.role != null ? it.role : ((it.type === 'table') ? inferRoleFromName(it.name) : null)),
     name: (it.name || '').trim() || 'Item',
     r1: Number(it.r1) || 1,
     c1: Number(it.c1) || 1,
@@ -327,11 +319,19 @@
     layoutInput.value = JSON.stringify({ version: state.version, rows: state.rows, cols: state.cols, items: state.items });
   };
 
+  const tableStyleFromName = (name) => {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('pustakawan')) return 'librarian';
+    if (n.includes('buku tamu') || n.includes('tamu')) return 'guest';
+    return 'visitor';
+  };
+
   const setStatus = () => {
     const rackCount = state.items.filter(i => i.type === 'rack').length;
-    const tableVisitorCount = state.items.filter(i => i.type === 'table' && i.role === 'visitor').length;
-    const tableLibrarianCount = state.items.filter(i => i.type === 'table' && i.role === 'librarian').length;
-    const tableGuestCount = state.items.filter(i => i.type === 'table' && i.role === 'guest').length;
+    const tables = state.items.filter(i => i.type === 'table');
+    const tableVisitorCount = tables.filter(t => tableStyleFromName(t.name) === 'visitor').length;
+    const tableLibrarianCount = tables.filter(t => tableStyleFromName(t.name) === 'librarian').length;
+    const tableGuestCount = tables.filter(t => tableStyleFromName(t.name) === 'guest').length;
     const doorCount = state.items.filter(i => i.type === 'door').length;
     let modeText = '';
     if (mode === 'add_rack') modeText = ' • Mode: tambah Rak';
@@ -346,9 +346,10 @@
     if (it.type === 'rack') return 'rd-item--rack';
     if (it.type === 'door') return 'rd-item--door';
     if (it.type === 'table') {
-      if (it.role === 'visitor') return 'rd-item--table-visitor';
-      if (it.role === 'librarian') return 'rd-item--table-librarian';
-      if (it.role === 'guest') return 'rd-item--table-guest';
+      const style = tableStyleFromName(it.name);
+      if (style === 'librarian') return 'rd-item--table-librarian';
+      if (style === 'guest') return 'rd-item--table-guest';
+      return 'rd-item--table-visitor';
     }
     return 'rd-item--rack';
   };
@@ -401,10 +402,9 @@
     }
     let defaultName = 'Rak ' + (state.items.filter(x => x.type === 'rack').length + 1);
     let promptMsg = 'Nama Rak:';
-    let role = null;
-    if (subType === 'table_visitor') { role = 'visitor'; defaultName = 'Meja Pengunjung ' + (state.items.filter(x => x.type === 'table' && x.role === 'visitor').length + 1); promptMsg = 'Nama Meja Pengunjung:'; }
-    else if (subType === 'table_librarian') { role = 'librarian'; defaultName = 'Meja Pustakawan ' + (state.items.filter(x => x.type === 'table' && x.role === 'librarian').length + 1); promptMsg = 'Nama Meja Pustakawan:'; }
-    else if (subType === 'table_guest') { role = 'guest'; defaultName = 'Meja Buku Tamu ' + (state.items.filter(x => x.type === 'table' && x.role === 'guest').length + 1); promptMsg = 'Nama Meja Buku Tamu:'; }
+    if (subType === 'table_visitor') { defaultName = 'Meja Pengunjung ' + (state.items.filter(x => x.type === 'table' && /meja pengunjung/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Pengunjung:'; }
+    else if (subType === 'table_librarian') { defaultName = 'Meja Pustakawan ' + (state.items.filter(x => x.type === 'table' && /meja pustakawan|pustakawan/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Pustakawan:'; }
+    else if (subType === 'table_guest') { defaultName = 'Meja Buku Tamu ' + (state.items.filter(x => x.type === 'table' && /meja buku tamu|buku tamu/i.test(x.name || '')).length + 1); promptMsg = 'Nama Meja Buku Tamu:'; }
     else if (subType === 'door') { defaultName = 'Pintu ' + (state.items.filter(x => x.type === 'door').length + 1); promptMsg = 'Nama Pintu:'; }
     let name = null;
     if (baseType === 'rack') {
@@ -414,7 +414,7 @@
       // selain rak, tidak perlu input nama (otomatis)
       name = defaultName;
     }
-    state.items.push({ id: `${baseType}_${Date.now()}_${Math.random().toString(16).slice(2)}`, type: baseType, role, name, ...rect });
+    state.items.push({ id: `${baseType}_${Date.now()}_${Math.random().toString(16).slice(2)}`, type: baseType, name, ...rect });
     return true;
   };
 
