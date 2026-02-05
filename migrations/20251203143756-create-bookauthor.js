@@ -1,4 +1,7 @@
 'use strict';
+
+const { DataTypes } = require("sequelize");
+
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('BookAuthors', {
@@ -20,7 +23,11 @@ module.exports = {
         },
         onDelete: 'CASCADE'
       },
-      role: Sequelize.STRING,
+      role: { 
+        type: DataTypes.ENUM('penulis', 'editor', 'penanggung jawab'),
+        allowNull: false,
+        defaultValue: 'penulis'
+      },
       createdAt: { 
         type: Sequelize.DATE,
         allowNull: false,
