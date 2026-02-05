@@ -1,15 +1,16 @@
 <style>
-.shelf-rack-cell .shelf-rack-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: clamp(6px, 1.2vmin, 10px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
+.shelf-rack-cell .shelf-rack-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: calc(var(--shelf-cell-px, 18) * 0.8px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
 </style>
-<div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+<% const useFillHeight = typeof fillHeight !== 'undefined' ? fillHeight : false; %>
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm <%= useFillHeight ? 'h-full min-h-0 flex flex-col' : '' %>">
     <% if (typeof showHeader !== 'undefined' && showHeader) { %>
-    <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+    <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center flex-shrink-0">
         <h3 class="font-bold text-gray-700 flex items-center">
             <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i> Denah Ruangan
         </h3>
     </div>
     <% } %>
-    <div class="p-6">
+    <div class="<%= useFillHeight ? 'flex-1 min-h-0 flex flex-col p-6' : 'p-6' %>">
         <% 
             const isPopupParam = typeof isPopup !== 'undefined' ? isPopup : false;
             let shelfRaw = typeof shelfLocation !== 'undefined' ? shelfLocation : '';
@@ -52,18 +53,18 @@
             const compactFrameParam = typeof compactFrame !== 'undefined' ? compactFrame : false;
             const mapSizeClass = hasDbLayout ? '' : (isPopupParam ? 'aspect-[2/1] max-h-[300px]' : 'aspect-[16/9] min-h-[120px]');
             const mapAspectStyle = hasDbLayout ? `aspect-ratio: ${dCols} / ${dRows};` : '';
-            const frameClass = compactFrameParam ? 'w-full min-h-[320px] max-h-[min(58vh,480px)] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full min-h-[320px] max-h-[min(65vh,500px)] max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2';
+            const frameClass = useFillHeight ? 'w-full flex-1 min-h-[200px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : (compactFrameParam ? 'w-full h-[min(58vh,420px)] min-h-[280px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full h-[min(75vh,560px)] min-h-[320px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2');
             const frameStyle = compactFrameParam ? '' : '-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;';
         %>
-        <% if (hasDbLayout) { %><div id="shelf-map-frame" class="<%= frameClass %>" style="<%= frameStyle %>"><% } %>
+        <% if (hasDbLayout) { %><div id="shelf-map-frame" class="<%= frameClass %>" style="<%= frameStyle %>"><div id="shelf-map-scaled-wrap" class="flex-shrink-0 overflow-hidden"><% } %>
         <div 
             id="shelf-map-container" 
-            class="relative bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden <%= hasDbLayout ? 'inline-block flex-shrink-0' : mapSizeClass ? 'w-full ' + mapSizeClass : 'w-full' %>"
+            class="relative bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden <%= hasDbLayout ? 'inline-block' : mapSizeClass ? 'w-full ' + mapSizeClass : 'w-full' %>"
             style="<%= mapAspectStyle %><%= hasDbLayout ? '' : '' %>"
             data-input-field-id="<%= typeof inputFieldId !== 'undefined' ? inputFieldId : 'shelf_location' %>"
             data-cols="<%= dCols %>"
             data-rows="<%= dRows %>"
-            data-min-cell="<%= compactFrameParam ? '12' : '14' %>"
+            data-min-cell="<%= compactFrameParam ? '16' : '18' %>"
         >
             <% if (hasDbLayout) { %>
                 <div class="shelf-map-grid w-full h-full grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden min-h-0" style="
@@ -82,7 +83,7 @@
                         } else if (item.type === 'door') { bgClass = 'bg-orange-400'; borderClass = 'border-orange-500'; textClass = 'text-white'; }
                         else if (item.type === 'cabinet') { bgClass = 'bg-gray-400'; borderClass = 'border-gray-500'; textClass = 'text-white'; }
                         else if (item.type === 'rack') {
-                            if (isBookRack(item.name)) { bgClass = 'bg-blue-600'; borderClass = 'border-blue-800'; textClass = 'text-white'; }
+                            if (isBookRack(item.name)) { bgClass = 'bg-blue-600 animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.6)]'; borderClass = 'border-blue-800'; textClass = 'text-white'; }
                             else { bgClass = 'bg-gray-300'; borderClass = 'border-gray-500'; }
                         }
                         const isRack = item.type === 'rack' && (item.name != null && String(item.name).trim() !== '');
@@ -103,9 +104,9 @@
                 </div>
             <% } %>
         </div>
-        <% if (hasDbLayout) { %></div><% } %>
+        <% if (hasDbLayout) { %></div></div><% } %>
         
-        <% if (hasDbLayout) { %><div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
+        <% if (hasDbLayout) { %><div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600 flex-shrink-0">
             <% if (hasRack) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div> 
                 <span>Rak Buku</span>
@@ -141,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const mapContainer = document.getElementById('shelf-map-container');
     const shelfMapFrame = document.getElementById('shelf-map-frame');
+    const shelfMapScaledWrap = document.getElementById('shelf-map-scaled-wrap');
     const shelfMapGrid = document.querySelector('.shelf-map-grid');
     
     if (!mapContainer) {
@@ -148,7 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Ukuran grid responsif: frame referensi 25×40, scale agar muat
+    // Ukuran grid: min 18px per cell (agar nama rak terbaca), scale transform jika map melebihi frame
+    // Wrapper dengan ukuran scaled agar layout tidak overflow (denah tidak terpotong)
+    // Font proporsional dengan cell (~62% dari cell) agar terbaca
     function fitGridToFrame() {
         if (!shelfMapFrame || !shelfMapGrid) return;
         const cols = parseInt(mapContainer.getAttribute('data-cols') || 40, 10);
@@ -156,23 +160,41 @@ document.addEventListener('DOMContentLoaded', function() {
         var pw = shelfMapFrame.clientWidth - 24;
         var ph = shelfMapFrame.clientHeight - 24;
         if (pw <= 0 || ph <= 0) {
-            pw = Math.max(400, (window.innerWidth || 800) - 100);
-            ph = Math.max(320, Math.min(500, (window.innerHeight || 600) * 0.5));
+            var scrollContainer = document.getElementById('map-scroll-container');
+            if (scrollContainer && scrollContainer.clientWidth > 0 && scrollContainer.clientHeight > 0) {
+                pw = scrollContainer.clientWidth - 80;
+                ph = scrollContainer.clientHeight - 80;
+            }
+            if (pw <= 0 || ph <= 0) {
+                pw = Math.max(400, (window.innerWidth || 800) - 100);
+                ph = Math.max(320, Math.min(600, (window.innerHeight || 800) * 0.6));
+            }
         }
         const gap = 2, pad = 8;
         const availW = pw - (cols - 1) * gap - pad;
         const availH = ph - (rows - 1) * gap - pad;
-        const cellSize = Math.min(Math.floor(availW / cols), Math.floor(availH / rows));
-        const minCell = parseInt(mapContainer.getAttribute('data-min-cell') || '14', 10);
-        const size = Math.max(minCell, cellSize);
+        const minCell = parseInt(mapContainer.getAttribute('data-min-cell') || '18', 10);
+        const fitSize = Math.min(Math.floor(availW / cols), Math.floor(availH / rows));
+        const size = Math.max(minCell, Math.max(18, fitSize));
         const totalW = cols * size + (cols - 1) * gap + pad;
         const totalH = rows * size + (rows - 1) * gap + pad;
+        let scale = 1;
+        if (totalW > pw || totalH > ph) {
+            scale = Math.min(pw / totalW, ph / totalH);
+        }
         shelfMapGrid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + size + 'px)';
         shelfMapGrid.style.gridTemplateRows = 'repeat(' + rows + ', ' + size + 'px)';
         mapContainer.style.width = totalW + 'px';
         mapContainer.style.height = totalH + 'px';
         mapContainer.style.maxWidth = 'none';
         mapContainer.style.maxHeight = 'none';
+        mapContainer.style.transform = 'scale(' + scale + ')';
+        mapContainer.style.transformOrigin = 'top left';
+        shelfMapGrid.style.setProperty('--shelf-cell-px', String(size));
+        if (shelfMapScaledWrap) {
+            shelfMapScaledWrap.style.width = Math.round(totalW * scale) + 'px';
+            shelfMapScaledWrap.style.height = Math.round(totalH * scale) + 'px';
+        }
     }
     
     if (shelfMapFrame && shelfMapGrid) {
@@ -246,10 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hapus semua class yang mungkin konflik
                 rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500', 
                                      'bg-blue-600', 'text-white', 'border-blue-800', 
-                                     'z-10', 'bg-gray-200', 'bg-gray-400');
+                                     'z-10', 'bg-gray-200', 'bg-gray-400', 'animate-pulse');
                 
-                // Tambah class highlight (tanpa animate-pulse agar tidak terlihat zoom/berubah ukuran)
-                rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                // Tambah class highlight dengan animate-pulse (berkedip seperti legenda)
+                rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10', 'animate-pulse');
                 console.log(`    📍 Classes setelah:`, rack.className);
                 
                 // Set inline style dengan !important untuk memastikan warna ter-apply
@@ -260,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rack.style.setProperty('border-width', '2px', 'important');
                 rack.style.setProperty('border-style', 'solid', 'important');
                 rack.style.setProperty('z-index', '10', 'important');
-                rack.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(30,58,138,0.5)', 'important');
+                rack.style.setProperty('box-shadow', '0 0 15px rgba(37,99,235,0.6)', 'important');
                 
                 // Verifikasi style ter-apply
                 const computedBg = window.getComputedStyle(rack).backgroundColor;
@@ -276,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } else {
                 // Reset rak yang tidak dipilih (tetap border-2 agar ukuran konsisten)
-                rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10', 'animate-pulse');
                 rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                 
                 // Reset inline style
@@ -531,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Jika tidak ada nilai, reset highlight
                 const allRacks = mapContainer.querySelectorAll('[data-rack-id]');
                 allRacks.forEach(rack => {
-                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10', 'animate-pulse');
                     rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                     rack.style.removeProperty('background-color');
                     rack.style.removeProperty('color');
@@ -622,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (isSelected) {
                     rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500');
-                    rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                    rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10', 'animate-pulse');
                     
                     // Set inline style dengan !important untuk memastikan warna ter-apply
                     rack.style.setProperty('background-color', '#2563eb', 'important'); // blue-600
@@ -631,9 +653,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     rack.style.setProperty('border-width', '2px', 'important');
                     rack.style.setProperty('border-style', 'solid', 'important');
                     rack.style.setProperty('z-index', '10', 'important');
-                    rack.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(30,58,138,0.5)', 'important');
+                    rack.style.setProperty('box-shadow', '0 0 15px rgba(37,99,235,0.6)', 'important');
                 } else {
-                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10', 'animate-pulse');
                     rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                     
                     // Reset inline style

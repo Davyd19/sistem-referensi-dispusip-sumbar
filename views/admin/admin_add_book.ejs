@@ -177,7 +177,7 @@
                         Klik pada rak di denah di bawah ini untuk memilih lokasi rak buku.
                     </p>
                     <!-- Include map interaktif di dalam popup -->
-                    <div id="shelf-map-popup-container" class="flex justify-center items-center max-w-full min-w-0 overflow-hidden">
+                    <div id="shelf-map-popup-container" class="flex justify-center items-start max-w-full min-w-0 overflow-auto w-full">
                         <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true, layoutJson: typeof layoutJson !== 'undefined' ? layoutJson : null, shelfLocation: '' }) %>
                     </div>
                 </div>

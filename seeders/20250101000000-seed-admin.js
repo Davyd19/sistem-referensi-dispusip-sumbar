@@ -175,9 +175,47 @@ module.exports = {
             version: 1
         };
 
-        // Layout Default untuk Puskel & Deposit (Deposit: cols 44, bisa diedit nanti)
+        // Layout Default untuk Puskel
         const layoutDefault = { cols: 20, rows: 20, items: [], version: 1 };
-        const layoutDeposit = { cols: 44, rows: 25, items: [], version: 1 };
+
+        const layoutDeposit = {
+            cols: 44,
+            rows: 39,
+            items: [
+                { c1: 2, c2: 4, id: "door_1770261765902_3dc6bcfe57f268", r1: 1, r2: 1, name: "Pintu 1", type: "door" },
+                { c1: 6, c2: 8, id: "table_1770261773085_cb82961eecae3", r1: 1, r2: 2, name: "Meja Buku Tamu 1", type: "table" },
+                { c1: 11, c2: 12, id: "rack_1770261901957_6839a6f2b8e258", r1: 1, r2: 6, name: "A1", type: "rack" },
+                { c1: 15, c2: 16, id: "rack_1770261906054_c6f24d44d4559", r1: 1, r2: 6, name: "B1", type: "rack" },
+                { c1: 19, c2: 20, id: "rack_1770261908631_42efb65789c108", r1: 1, r2: 6, name: "C1", type: "rack" },
+                { c1: 23, c2: 24, id: "rack_1770261912174_c5e29c8c35f5", r1: 1, r2: 6, name: "D1", type: "rack" },
+                { c1: 27, c2: 28, id: "rack_1770261914629_d5a6122a86e74", r1: 1, r2: 6, name: "E1", type: "rack" },
+                { c1: 31, c2: 32, id: "rack_1770261918369_41096e24cbeb08", r1: 1, r2: 6, name: "F1", type: "rack" },
+                { c1: 35, c2: 36, id: "rack_1770261922050_d47bb22e0fdb", r1: 1, r2: 6, name: "G1", type: "rack" },
+                { c1: 35, c2: 36, id: "rack_1770261929808_8f272bf891c3", r1: 7, r2: 12, name: "G2", type: "rack" },
+                { c1: 39, c2: 40, id: "rack_1770261933768_5dec5ab8da7868", r1: 1, r2: 6, name: "H1", type: "rack" },
+                { c1: 39, c2: 40, id: "rack_1770261936010_869864909683b", r1: 7, r2: 12, name: "H2", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770261938887_9802f8e6cde3c8", r1: 1, r2: 6, name: "I1", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770261942127_52ac447d4baf28", r1: 7, r2: 12, name: "I2", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770261951051_e5e5dc56855ab", r1: 13, r2: 18, name: "I3", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770262002079_277f34d79df508", r1: 20, r2: 25, name: "J1", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770262017487_fc6cd92e5d3ff8", r1: 26, r2: 31, name: "J2", type: "rack" },
+                { c1: 43, c2: 44, id: "rack_1770262024034_5a0dd916402248", r1: 32, r2: 37, name: "J3", type: "rack" },
+                { c1: 39, c2: 40, id: "rack_1770262141258_4adfd55d75587", r1: 34, r2: 39, name: "K3", type: "rack" },
+                { c1: 39, c2: 40, id: "rack_1770262147715_64cd9227f7676", r1: 28, r2: 33, name: "K2", type: "rack" },
+                { c1: 39, c2: 40, id: "rack_1770262162191_640dd874402d08", r1: 22, r2: 27, name: "K1", type: "rack" },
+                { c1: 35, c2: 37, id: "table_1770262208518_c17b697b922b28", r1: 34, r2: 39, name: "Meja Pustakawan 1", type: "table" },
+                { c1: 29, c2: 34, id: "rack_1770262299443_54b6be947ab7", r1: 38, r2: 39, name: "L1", type: "rack" },
+                { c1: 19, c2: 24, id: "rack_1770262339104_7ca9bd095734d", r1: 38, r2: 39, name: "M1", type: "rack" },
+                { c1: 15, c2: 16, id: "rack_1770262357783_74a2a719dfb658", r1: 34, r2: 39, name: "N1", type: "rack" },
+                { c1: 3, c2: 4, id: "rack_1770262385738_8e2d3e948a9f", r1: 34, r2: 39, name: "O1", type: "rack" },
+                { c1: 1, c2: 2, id: "rack_1770262394578_b776da0be8a03", r1: 28, r2: 33, name: "P1", type: "rack" },
+                { c1: 7, c2: 14, id: "table_1770262413642_26ab02073d1dc8", r1: 34, r2: 36, name: "Meja Pustakawan 2", type: "table" },
+                { c1: 7, c2: 15, id: "table_1770262440016_3632dd95ff4338", r1: 22, r2: 27, name: "Meja Pengunjung 1", type: "table" },
+                { c1: 16, c2: 24, id: "table_1770262446014_a2df080c49c1", r1: 22, r2: 27, name: "Meja Pengunjung 2", type: "table" },
+                { c1: 30, c2: 35, id: "table_1770262472385_0ec3bef21c2c9", r1: 16, r2: 26, name: "Meja Pengunjung 3", type: "table" }
+            ],
+            version: 1
+        };
 
         // 0. Hapus data lama jika ada (agar seed bisa dijalankan ulang)
         await queryInterface.bulkDelete('ruangan', null, {});

@@ -147,8 +147,8 @@
                 <input type="hidden" name="layout_json" id="layoutJsonInput" value="">
 
                 <div class="px-6 pb-6">
-                    <div id="denahViewport" class="denah-viewport rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 max-w-full overflow-x-auto overflow-y-visible min-h-[400px]">
-                        <div id="gridContainer" class="select-none inline-block"></div>
+                    <div id="denahViewport" class="denah-viewport rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 max-w-full overflow-hidden min-h-[400px] flex justify-center items-center">
+                        <div id="gridContainer" class="select-none inline-block origin-center"></div>
                     </div>
                     <p id="layoutStatus" class="text-xs text-gray-500 mt-2"></p>
                 </div>
@@ -221,7 +221,7 @@
 .rd-item { display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 2px solid; font-size: 10px; font-weight: 700; text-align: center; padding: 2px 4px; cursor: grab; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
 .rd-item:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .rd-item:active { cursor: grabbing; }
-.rd-item-label { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.15; word-break: break-word; overflow-wrap: anywhere; font-size: clamp(6px, 1.1vmin, 11px); text-align: center; }
+.rd-item-label { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.15; word-break: break-word; overflow-wrap: anywhere; font-size: calc(var(--rd-cell-size, 18px) * 0.8); text-align: center; }
 .rd-item--rack { background: rgba(107, 114, 128, 0.35); border-color: #4b5563; color: #1f2937; }
 .rd-item--table-visitor { background: rgba(248, 113, 113, 0.3); border-color: #dc2626; color: #7f1d1d; }
 .rd-item--table-librarian { background: rgba(45, 212, 191, 0.3); border-color: #0d9488; color: #134e4a; }
@@ -502,7 +502,7 @@
     const wrapper = document.getElementById('denahViewport');
     if (!wrapper || !gridEl) return null;
     const br = gridEl.getBoundingClientRect();
-    const step = 32;
+    const step = (lastCellSize + GAP) * lastScale;
     const c = Math.floor((clientX - br.left + 3) / step) + 1;
     const r = Math.floor((clientY - br.top + 3) / step) + 1;
     if (r < 1 || r > state.rows || c < 1 || c > state.cols) return null;
@@ -548,6 +548,8 @@
   const denahViewport = document.getElementById('denahViewport');
   const GAP = 6;
   const PAD = 16;
+  let lastCellSize = 26;
+  let lastScale = 1;
 
   function fitGridToViewport() {
     if (!denahViewport) return 26;
@@ -561,17 +563,20 @@
     }
     const availW = pw - (cols - 1) * GAP;
     const availH = ph - (rows - 1) * GAP;
-    const availW40 = pw - (40 - 1) * GAP;
-    let cellW = cols > 0 ? availW / cols : 26;
-    let cellW40 = availW40 / 40;
-    let cellH = rows > 0 ? availH / rows : 26;
-    let size;
-    if (cols > 40) {
-      size = Math.floor(cellW40);
-    } else {
-      size = Math.floor(cellW);
+    const minCell = 18;
+    const fitSize = Math.min(Math.floor(availW / cols), Math.floor(availH / rows));
+    const size = Math.max(minCell, Math.min(32, fitSize));
+    const totalW = cols * size + (cols - 1) * GAP;
+    const totalH = rows * size + (rows - 1) * GAP;
+    let scale = 1;
+    if (totalW > pw || totalH > ph) {
+      scale = Math.min(pw / totalW, ph / totalH);
     }
-    return Math.max(14, Math.min(32, size));
+    gridEl.style.transform = 'scale(' + scale + ')';
+    gridEl.style.transformOrigin = 'center center';
+    lastCellSize = size;
+    lastScale = scale;
+    return size;
   }
 
   const render = () => {
@@ -581,8 +586,8 @@
     gridEl.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
     gridEl.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
     if (denahViewport) {
-      denahViewport.style.overflowX = state.cols > 40 ? 'auto' : 'hidden';
-      denahViewport.style.overflowY = 'visible';
+      denahViewport.style.overflowX = 'hidden';
+      denahViewport.style.overflowY = 'hidden';
     }
 
     const occupied = getOccupiedRects().filter(it => it.id !== movingItemId);
