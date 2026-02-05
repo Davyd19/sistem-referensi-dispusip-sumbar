@@ -1,8 +1,6 @@
-# SmarLIB - Sistem Informasi Unit Layanan Dispusip Sumbar
+# SIULAN - Sistem Informasi Unit Layanan Dispusip Sumbar
 
-![SmarLIB Logo](public/image/assets/smarLIB.png)
-
-**SmarLIB** adalah aplikasi web Sistem Pencarian Referensi dan Manajemen Perpustakaan yang dikembangkan untuk Dinas Kearsipan dan Perpustakaan (Dispusip) Provinsi Sumatera Barat. Aplikasi ini memudahkan pengguna dalam mencari referensi buku, melihat lokasi rak secara visual (shelf mapping), serta menyediakan panel administrasi yang lengkap untuk pengelolaan data perpustakaan dan layanan Pustaka Keliling (Puskel).
+**SIULAN** adalah aplikasi web Sistem Pencarian Referensi dan Manajemen Perpustakaan yang dikembangkan untuk Dinas Kearsipan dan Perpustakaan (Dispusip) Provinsi Sumatera Barat. Aplikasi ini memudahkan pengguna dalam mencari referensi buku, melihat lokasi rak secara visual (shelf mapping), serta menyediakan panel administrasi yang lengkap untuk pengelolaan data perpustakaan dan layanan Pustaka Keliling (Puskel).
 
 ## 🌟 Fitur Utama
 
