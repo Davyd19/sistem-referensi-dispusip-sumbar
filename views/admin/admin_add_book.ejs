@@ -248,6 +248,18 @@
         <label class="font-medium">Gambar Sampul Buku</label>
 
         <div id="cover-wrapper" class="mt-2 space-y-2">
+            <div id="cover-preview" class="hidden items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <img id="img-preview-tag" src="#" alt="Preview" 
+                        class="w-16 h-20 object-cover rounded border border-gray-200">
+                    <span id="cover-filename" class="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700"></span>
+                </div>
+                <button type="button" id="remove-cover"
+                    class="text-red-600 font-bold hover:text-red-800" title="Batal tambah gambar">
+                    ✖
+                </button>
+            </div>
+
             <input 
                 type="file" 
                 name="image" 
@@ -255,24 +267,6 @@
                 accept="image/*" 
                 class="w-full p-2 border rounded"
             >
-
-            <div 
-                id="cover-preview" 
-                class="hidden flex items-center gap-3"
-            >
-                <span 
-                    id="cover-filename"
-                    class="px-3 py-1 bg-gray-200 rounded text-sm"
-                ></span>
-
-                <button 
-                    type="button" 
-                    id="remove-cover"
-                    class="text-red-600 font-bold hover:text-red-800"
-                >
-                    ✖
-                </button>
-            </div>
         </div>
     </div>
 
@@ -327,21 +321,35 @@
     const coverInput = document.getElementById('cover-input');
     const coverPreview = document.getElementById('cover-preview');
     const coverFilename = document.getElementById('cover-filename');
+    const imgPreviewTag = document.getElementById('img-preview-tag');
     const removeCoverBtn = document.getElementById('remove-cover');
 
-    coverInput.addEventListener('change', () => {
-        if (!coverInput.files.length) return;
+    coverInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // 1. Baca file untuk preview thumbnail
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgPreviewTag.src = e.target.result;
+                // 2. Tampilkan container preview dengan layout flex
+                coverPreview.classList.remove('hidden');
+                coverPreview.classList.add('flex');
+            }
+            reader.readAsDataURL(file);
 
-        coverFilename.textContent = coverInput.files[0].name;
+            // 3. Set nama file pada label
+            coverFilename.textContent = file.name;
 
-        coverInput.classList.add('hidden');     // sembunyikan input
-        coverPreview.classList.remove('hidden'); // tampilkan nama file
+            // 4. Sembunyikan input asli
+            this.classList.add('hidden');
+        }
     });
 
     removeCoverBtn.addEventListener('click', () => {
-        coverInput.value = "";                  // hapus file
-        coverInput.classList.remove('hidden');  // munculkan input
-        coverPreview.classList.add('hidden');   // sembunyikan preview
+        coverInput.value = ""; // Reset file
+        coverInput.classList.remove('hidden'); // Munculkan kembali input
+        coverPreview.classList.add('hidden'); // Sembunyikan preview
+        coverPreview.classList.remove('flex');
     });
 
     // ================= POPUP MAP RAK =================
