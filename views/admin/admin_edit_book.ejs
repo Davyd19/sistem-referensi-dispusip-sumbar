@@ -287,52 +287,51 @@
         </div>
 
             <!-- ================= COVER ================= -->
-            <div>
-                <label class="font-medium">Gambar Sampul Buku</label>
+        <div>
+            <label class="font-medium">Gambar Sampul Buku</label>
 
-                <div id="cover-wrapper" class="mt-2 space-y-2">
-                    <!-- Hidden input untuk menandai jika gambar lama dihapus -->
-                    <input type="hidden" name="remove_image" id="remove-image-flag" value="false">
+            <div id="cover-wrapper" class="mt-2 space-y-2">
+                <input type="hidden" name="remove_image" id="remove-image-flag" value="false">
 
-                    <!-- Existing cover (jika ada) -->
-                    <% if (book.image) { %>
-                        <div id="existing-cover" class="flex items-center gap-3">
-                            <div class="flex items-center gap-2">
-                                <img src="/image/uploads/<%= book.image %>" alt="Cover"
-                                    class="w-16 h-20 object-cover rounded border border-gray-200">
-                                <span class="px-3 py-1 bg-gray-200 rounded text-sm">
-                                    <%= book.image %>
-                                </span>
-                            </div>
-                            <button type="button" id="remove-existing-cover"
-                                class="text-red-600 font-bold hover:text-red-800" title="Hapus / ganti cover">
-                                ✖
-                            </button>
-                        </div>
-
-                        <input type="file" name="image" id="cover-input" accept="image/*"
-                            class="w-full p-2 border rounded hidden">
-                        <% } else { %>
-                            <input type="file" name="image" id="cover-input" accept="image/*"
-                                class="w-full p-2 border rounded">
-                            <% } %>
-
-                                <!-- Preview untuk gambar baru yang di-upload -->
-                                <div id="cover-preview" class="hidden flex items-center gap-3">
-                                    <span id="cover-filename" class="px-3 py-1 bg-gray-200 rounded text-sm"></span>
-
-                                    <button type="button" id="remove-new-cover"
-                                        class="text-red-600 font-bold hover:text-red-800" title="Hapus gambar baru">
-                                        ✖
-                                    </button>
-                                </div>
+                <div id="cover-preview-container" class="hidden items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <img id="img-preview-tag" src="#" alt="Preview" 
+                            class="w-16 h-20 object-cover rounded border border-gray-200">
+                        <span id="cover-filename" class="px-3 py-1 bg-gray-200 rounded text-sm text-gray-700"></span>
+                    </div>
+                    <button type="button" id="remove-new-cover"
+                        class="text-red-600 font-bold hover:text-red-800" title="Batal tambah gambar">
+                        ✖
+                    </button>
                 </div>
-            </div>
 
-            <button
-                class="w-full sm:w-auto bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition-colors">
-                Update Buku
-            </button>
+                <% if (book.image) { %>
+                    <div id="existing-cover" class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <img src="/image/uploads/<%= book.image %>" alt="Cover"
+                                class="w-16 h-20 object-cover rounded border border-gray-200">
+                            <span class="px-3 py-1 bg-gray-200 rounded text-sm">
+                                <%= book.image %>
+                            </span>
+                        </div>
+                        <button type="button" id="remove-existing-cover"
+                            class="text-red-600 font-bold hover:text-red-800" title="Hapus / ganti cover">
+                            ✖
+                        </button>
+                    </div>
+                    <input type="file" name="image" id="cover-input" accept="image/*"
+                        class="w-full p-2 border rounded hidden">
+                <% } else { %>
+                    <input type="file" name="image" id="cover-input" accept="image/*"
+                        class="w-full p-2 border rounded">
+                <% } %>
+            </div>
+        </div>
+
+        <button
+            class="w-full sm:w-auto bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition-colors">
+            Update Buku
+        </button>
 
     </form>
 
@@ -1007,6 +1006,71 @@
         addRowBtn.addEventListener('click', () => addRow("", ""));
 
             // addRowBtn.addEventListener('click', () => addRow());
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const coverInput = document.getElementById('cover-input');
+            const previewContainer = document.getElementById('cover-preview-container');
+            const imgPreview = document.getElementById('img-preview-tag');
+            const filenameLabel = document.getElementById('cover-filename');
+            const existingCover = document.getElementById('existing-cover');
+            const removeImageFlag = document.getElementById('remove-image-flag');
+
+            if (coverInput) {
+                coverInput.addEventListener('change', function() {
+                    const file = this.files[0];
+                    
+                    if (file) {
+                        // Sembunyikan cover lama jika ada
+                        if (existingCover) existingCover.classList.add('hidden');
+                        
+                        // Gunakan FileReader untuk menampilkan gambar mini (thumbnail)
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            imgPreview.src = e.target.result;
+                            // Tampilkan container dengan gaya flex agar sejajar ke samping
+                            previewContainer.classList.remove('hidden');
+                            previewContainer.classList.add('flex');
+                        }
+                        reader.readAsDataURL(file);
+
+                        // Set nama file pada label abu-abu
+                        filenameLabel.textContent = file.name;
+
+                        // Sembunyikan input file agar rapi
+                        this.classList.add('hidden');
+                        
+                        // Reset flag hapus (karena kita mengunggah file baru)
+                        removeImageFlag.value = 'false';
+                    }
+                });
+            }
+
+        // Handler Hapus Preview Baru (Tombol X merah)
+        document.getElementById('remove-new-cover').addEventListener('click', function() {
+            coverInput.value = ""; // Reset pilihan file
+            coverInput.classList.remove('hidden'); // Munculkan kembali tombol 'Choose File'
+            previewContainer.classList.add('hidden'); // Sembunyikan preview thumbnail
+            previewContainer.classList.remove('flex');
+            
+            // Kembalikan ke tampilan awal jika sebelumnya ada gambar lama
+            if (existingCover && removeImageFlag.value === 'false') {
+                existingCover.classList.remove('hidden');
+            } else if (existingCover) {
+                // Jika flag hapus sudah true, biarkan tetap tersembunyi
+                removeImageFlag.value = 'true';
+            }
+        });
+
+        // Handler Hapus Cover Lama dari Database
+        const removeExistingBtn = document.getElementById('remove-existing-cover');
+        if (removeExistingBtn) {
+            removeExistingBtn.addEventListener('click', function() {
+                if (existingCover) existingCover.remove();
+                coverInput.classList.remove('hidden');
+                removeImageFlag.value = 'true'; // Tandai untuk dihapus di server
+            });
+        }
+    });
     </script>
 
     <style>
