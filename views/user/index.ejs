@@ -1,393 +1,489 @@
 <%- include('partials/header') %>
 
-<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
 
-<div class="w-full px-4 sm:px-6 md:w-[90%] md:mx-auto py-4 md:py-6">
+    <div class="w-full px-4 sm:px-6 md:w-[90%] md:mx-auto py-4 md:py-6">
 
-    <div class="mb-4 sm:mb-6">
-        <a href="/pilih-ruangan" class="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors duration-200 group">
-            <div class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm group-hover:border-blue-400 group-hover:bg-blue-50 transition-all">
-                <i class="fas fa-arrow-left text-sm group-hover:-translate-x-0.5 transition-transform"></i>
-            </div>
-            <span class="font-medium text-sm sm:text-base">Kembali ke Daftar Ruangan</span>
-        </a>
-    </div>
-
-    <main class="w-full">
-            <form action="/search" method="GET" class="w-full">
-    
-    <div class="mb-4 md:hidden">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-sliders-h text-blue-600 text-sm"></i>
-                    <span class="text-sm font-bold text-gray-700 uppercase tracking-wide">Filter</span>
+        <div class="mb-4 sm:mb-6">
+            <a href="/pilih-ruangan"
+                class="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors duration-200 group">
+                <div
+                    class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm group-hover:border-blue-400 group-hover:bg-blue-50 transition-all">
+                    <i class="fas fa-arrow-left text-sm group-hover:-translate-x-0.5 transition-transform"></i>
                 </div>
-                <% if (query.q || query.category || query.subject || query.year) { %>
-                    <span class="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Aktif</span>
-                <% } %>
-            </div>
-            
-            <div class="p-4 bg-white">
-                <input type="hidden" name="q" value="<%= query.q || '' %>">
-                <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
-                <input type="hidden" name="searchBy" value="<%= query.searchBy || 'title' %>">
-                <input type="hidden" name="matchType" value="<%= query.matchType || 'contains' %>">
-                <input type="hidden" name="sortBy" value="<%= query.sortBy || 'title' %>" id="filterSortByMobile">
-                <input type="hidden" name="sortOrder" value="<%= query.sortOrder || 'ASC' %>" id="filterSortOrderMobile">
-                
-                <div class="grid grid-cols-1 gap-3">
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1 block">Kategori</label>
-                        <select name="category" id="categorySelectMobile" class="w-full">
-                            <option value="">Semua Kategori</option>
-                            <% sidebarData.categories.forEach(item => { %>
-                                <option value="<%= item.id %>" <%= query.category == item.id ? 'selected' : '' %>><%= item.name %></option>
-                            <% }) %>
-                        </select>
-                    </div>
-
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1 block">Subjek</label>
-                        <select name="subject" id="subjectSelectMobile" class="w-full">
-                            <option value="">Semua Subjek</option>
-                            <% sidebarData.subjects.forEach(item => { %>
-                                <option value="<%= item.id %>" <%= query.subject == item.id ? 'selected' : '' %>><%= item.name %></option>
-                            <% }) %>
-                        </select>
-                    </div>
-
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1 block">Tahun</label>
-                        <select name="year" id="yearSelectMobile" class="w-full">
-                            <option value="">Semua Tahun</option>
-                            <% sidebarData.years.forEach(item => { %>
-                                <option value="<%= item.year %>" <%= query.year == item.year ? 'selected' : '' %>><%= item.year %></option>
-                            <% }) %>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2">
-                        <i class="fas fa-filter text-xs"></i> <span>Terapkan</span>
-                    </button>
-                    <a href="/search?id_ruangan=<%= query.id_ruangan %>" class="px-4 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 bg-white border border-gray-200 rounded-lg transition flex items-center gap-1">
-                        <i class="fas fa-undo text-xs"></i>
-                    </a>
-                </div>
-            </div>
+                <span class="font-medium text-sm sm:text-base">Kembali ke Daftar Ruangan</span>
+            </a>
         </div>
-    </div>
 
-    <div class="flex flex-col md:flex-row md:gap-6 items-start">
-        
-        <aside class="hidden md:block md:w-72 flex-shrink-0 sticky top-6">
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                <div class="bg-gray-50 px-5 py-4 border-b border-gray-200">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-sliders-h text-blue-600"></i>
-                        <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">Filter Koleksi</span>
-                    </div>
-                </div>
-                
-                <div class="p-5 space-y-5">
-                    <input type="hidden" name="q" value="<%= query.q || '' %>">
-                    <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
-                    <input type="hidden" name="searchBy" value="<%= query.searchBy || 'title' %>">
-                    <input type="hidden" name="matchType" value="<%= query.matchType || 'contains' %>">
-                    <input type="hidden" name="sortBy" value="<%= query.sortBy || 'title' %>" id="filterSortBy">
-                    <input type="hidden" name="sortOrder" value="<%= query.sortOrder || 'ASC' %>" id="filterSortOrder">
+        <main class="w-full">
+            <form action="/search" method="GET" class="w-full">
 
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">Kategori</label>
-                        <select name="category" id="categorySelect" class="w-full">
-                            <option value="">Semua Kategori</option>
-                            <% sidebarData.categories.forEach(item => { %>
-                                <option value="<%= item.id %>" <%= query.category == item.id ? 'selected' : '' %>><%= item.name %></option>
-                            <% }) %>
-                        </select>
-                    </div>
+                <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
+                <div class="mb-4 md:hidden">
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
 
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">Subjek</label>
-                        <select name="subject" id="subjectSelect" class="w-full">
-                            <option value="">Semua Subjek</option>
-                            <% sidebarData.subjects.forEach(item => { %>
-                                <option value="<%= item.id %>" <%= query.subject == item.id ? 'selected' : '' %>><%= item.name %></option>
-                            <% }) %>
-                        </select>
-                    </div>
+                        <!-- Header -->
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-sliders-h text-blue-600 text-sm"></i>
+                                <span class="text-sm font-bold text-gray-700 uppercase tracking-wide">Filter</span>
+                            </div>
 
-                    <div class="min-w-0">
-                        <label class="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">Tahun</label>
-                        <select name="year" id="yearSelect" class="w-full">
-                            <option value="">Semua Tahun</option>
-                            <% sidebarData.years.forEach(item => { %>
-                                <option value="<%= item.year %>" <%= query.year == item.year ? 'selected' : '' %>><%= item.year %></option>
-                            <% }) %>
-                        </select>
-                    </div>
-
-                    <div class="pt-2">
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold transition shadow-sm flex items-center justify-center gap-2 text-sm">
-                            <i class="fas fa-filter text-xs"></i> Terapkan Filter
-                        </button>
-                    </div>
-                    
-                    <div class="flex flex-col gap-3 pt-2 border-t border-gray-100">
-                        <div class="text-center">
-                            <a href="/search?id_ruangan=<%= query.id_ruangan %>" class="text-xs text-gray-500 hover:text-blue-600 transition font-medium inline-flex items-center gap-1">
-                                <i class="fas fa-undo text-[10px]"></i> Reset Semua Filter
-                            </a>
-                        </div>
-                        <% if (query.q || query.category || query.subject || query.year) { %>
-                            <div class="text-center">
-                                <span class="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold uppercase inline-block">
-                                    Filter Sedang Aktif
+                            <% if (query.q || query.category || query.subject || query.year) { %>
+                                <span
+                                    class="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">
+                                    Aktif
                                 </span>
-                            </div>
-                        <% } %>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <div class="flex-1 flex flex-col min-w-0">
-            
-            <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6 flex-shrink-0 overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 md:hidden">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-search text-blue-600 text-sm"></i>
-                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wide">Pencarian</span>
-                    </div>
-                </div>
-                
-                <div class="p-4 md:p-6">
-                    <h2 class="hidden md:flex text-xl font-bold text-gray-800 mb-5 items-center">
-                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3 text-blue-600">
-                            <i class="fas fa-search text-sm"></i> 
-                        </div>
-                        <span>Pencarian Koleksi</span>
-                    </h2>
-                    
-                    <div class="flex flex-col md:flex-row gap-3">
-                        <div class="flex-grow relative">
-                            <input type="hidden" name="id_ruangan" value="<%= query.id_ruangan %>">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </div>
-                            <input type="text" name="q" value="<%= query.q || '' %>"
-                                class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm text-gray-800 placeholder:text-gray-400"
-                                placeholder="Masukkan kata kunci pencarian...">
-                        </div>
-
-                        <div class="grid grid-cols-2 md:flex gap-3 md:w-auto">
-                            <div class="md:w-40">
-                                <select name="searchBy" class="w-full py-2.5 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                                    <option value="title" <%= query.searchBy === 'title' ? 'selected' : '' %>>Judul</option>
-                                    <option value="author" <%= query.searchBy === 'author' ? 'selected' : '' %>>Pengarang</option>
-                                    <option value="publisher" <%= query.searchBy === 'publisher' ? 'selected' : '' %>>Penerbit</option>
-                                    <option value="subject" <%= query.searchBy === 'subject' ? 'selected' : '' %>>Subjek</option>
-                                </select>
-                            </div>
-
-                            <div class="md:w-44">
-                                <select name="matchType" class="w-full py-2.5 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                                    <option value="contains" <%= query.matchType === 'contains' ? 'selected' : '' %>>Salah Satu Isi</option>
-                                    <option value="startsWith" <%= query.matchType === 'startsWith' ? 'selected' : '' %>>Dimulai Dengan</option>
-                                    <option value="endsWith" <%= query.matchType === 'endsWith' ? 'selected' : '' %>>Diakhiri Dengan</option>
-                                    <option value="exact" <%= query.matchType === 'exact' ? 'selected' : '' %>>Tepat (Exact)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="w-full md:w-auto">
-                            <button type="submit" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
-                                <span>Cari</span> <i class="fas fa-arrow-right text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mt-5 pt-4 border-t border-gray-100">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <label class="text-sm font-semibold text-gray-600 flex items-center gap-2">
-                                <i class="fas fa-sort-amount-down text-gray-400"></i>
-                                <span>Urutkan Hasil:</span>
-                            </label>
-                            
-                            <div class="grid grid-cols-2 gap-2 md:hidden">
-                                <select id="sortByMobile" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500" onchange="window.applySorting()">
-                                    <option value="title" <%= (!query.sortBy || query.sortBy === 'title') ? 'selected' : '' %>>Judul (A-Z)</option>
-                                    <option value="updatedAt" <%= query.sortBy === 'updatedAt' ? 'selected' : '' %>>Terakhir Diupdate</option>
-                                    <option value="createdAt" <%= query.sortBy === 'createdAt' ? 'selected' : '' %>>Terakhir Ditambahkan</option>
-                                </select>
-                                <button type="button" id="sortOrderToggleMobile" 
-                                    class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs hover:bg-gray-100 transition flex items-center justify-center gap-1.5"
-                                    onclick="window.toggleSortOrder()" data-order="<%= query.sortOrder || 'ASC' %>">
-                                    <i id="sortOrderIconMobile" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600"></i>
-                                    <span id="sortOrderTextMobile"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
-                                </button>
-                            </div>
-
-                            <div class="hidden md:flex gap-2 items-center">
-                                <select id="sortByDesktop" class="pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="window.applySorting()">
-                                    <option value="title" <%= (!query.sortBy || query.sortBy === 'title') ? 'selected' : '' %>>Judul (A-Z)</option>
-                                    <option value="updatedAt" <%= query.sortBy === 'updatedAt' ? 'selected' : '' %>>Terakhir Diupdate</option>
-                                    <option value="createdAt" <%= query.sortBy === 'createdAt' ? 'selected' : '' %>>Terakhir Ditambahkan</option>
-                                </select>
-                                <button type="button" id="sortOrderToggleDesktop" 
-                                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
-                                    onclick="window.toggleSortOrder()" data-order="<%= query.sortOrder || 'ASC' %>">
-                                    <i id="sortOrderIconDesktop" class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600"></i>
-                                    <span id="sortOrderTextDesktop"><%= (query.sortOrder || 'ASC') === 'DESC' ? 'Turun' : 'Naik' %></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-                    <div class="flex-1 md:overflow-y-auto md:max-h-[calc(100vh-250px)] md:pr-2">
-            <div class="space-y-4">
-                <% if (books.length > 0) { %>
-                    <% books.forEach(book => { %>
-                        <a href="/books/detail/<%= book.id %>?id_ruangan=<%= query.id_ruangan %>&origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>"
-                            class="block bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 flex flex-row gap-3 group cursor-pointer active:scale-[0.98] overflow-hidden sm:rounded-lg sm:border-gray-200 sm:hover:border-blue-400 sm:hover:shadow-md sm:transition sm:active:scale-100 sm:p-4 sm:gap-4 p-3"
-                                >
-                                        <div class="w-16 h-20 sm:w-24 sm:h-32 bg-gradient-to-br from-gray-50 to-gray-100 sm:bg-gray-100 rounded-lg sm:rounded border border-gray-200 sm:border overflow-hidden flex justify-center items-center flex-shrink-0 shadow-sm sm:shadow-none">
-                                <% if (book.image) { %>
-                                                <img src="<%= book.image_full_path %>" class="w-full h-full object-cover sm:object-contain" alt="<%= book.title %>">
-                                <% } else { %>
-                                                <div class="flex flex-col justify-center items-center p-1 sm:p-2">
-                                                    <i class="fas fa-book text-lg sm:text-3xl mb-0.5 sm:mb-1 text-gray-400"></i>
-                                                    <span class="text-[7px] sm:text-[9px] text-center text-gray-500 leading-tight hidden sm:block">SAMPUL BELUM TERSEDIA</span>
-                                    </div>
                                 <% } %>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="p-4 bg-white">
+
+                            <input type="hidden" name="q" value="<%= query.q || '' %>">
+                            <input type="hidden" name="searchBy" value="<%= query.searchBy || 'title' %>">
+                            <input type="hidden" name="matchType" value="<%= query.matchType || 'contains' %>">
+                            <input type="hidden" name="sortBy" value="<%= query.sortBy || 'title' %>"
+                                id="filterSortByMobile">
+                            <input type="hidden" name="sortOrder" value="<%= query.sortOrder || 'ASC' %>"
+                                id="filterSortOrderMobile">
+
+                            <div class="grid grid-cols-1 gap-3">
+
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-500 mb-1 block">Kategori</label>
+                                    <select name="category" id="categorySelectMobile"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                                        <option value="">Semua Kategori</option>
+                                        <% sidebarData.categories.forEach(item=> { %>
+                                            <option value="<%= item.id %>" <%=query.category==item.id ? 'selected' : ''
+                                                %>>
+                                                <%= item.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-500 mb-1 block">Subjek</label>
+                                    <select name="subject" id="subjectSelectMobile"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                                        <option value="">Semua Subjek</option>
+                                        <% sidebarData.subjects.forEach(item=> { %>
+                                            <option value="<%= item.id %>" <%=query.subject==item.id ? 'selected' : ''
+                                                %>>
+                                                <%= item.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-500 mb-1 block">Tahun</label>
+                                    <select name="year" id="yearSelectMobile"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                                        <option value="">Semua Tahun</option>
+                                        <% sidebarData.years.forEach(item=> { %>
+                                            <option value="<%= item.year %>" <%=query.year==item.year ? 'selected' : ''
+                                                %>>
+                                                <%= item.year %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
                             </div>
 
-                                        <div class="flex-grow text-xs sm:text-sm min-w-0 flex flex-col">
-                                            <h4 class="text-sm sm:text-base font-bold text-blue-700 group-hover:text-blue-800 sm:group-hover:text-blue-700 group-hover:underline cursor-pointer mb-1.5 sm:mb-2 line-clamp-2 leading-tight sm:leading-normal"
-                                                onclick="window.location.href='/book/<%= book.id %>?origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>'">
-                                    <%= book.title %>
-                            </h4>
-                                            
-                                            <div class="space-y-1 sm:grid sm:grid-cols-1 sm:gap-y-1 text-gray-600">
-                                                <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
-                                                    <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Kategori</span>
-                                                    <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.Category ? book.Category.name : '-' %></span>
-                                                </div>
-                                                
-                                                <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
-                                                    <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Pengarang</span>
-                                                    <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.Authors.map(a => a.name).join(", ") %></span>
-                                                </div>
-                                                
-                                                <div class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
-                                                    <span class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Penerbitan</span>
-                                                    <span class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">: <%= book.publish_place %> : <%= book.Publishers.map(p => p.name).join(", ") %>, <%= book.publish_year %></span>
-                                                </div>
+                            <!-- Buttons -->
+                            <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                                <button type="submit"
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
+                                    <i class="fas fa-filter text-xs"></i> Terapkan
+                                </button>
+
+                                <a href="/search?id_ruangan=<%= query.id_ruangan %>"
+                                    class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                                    <i class="fas fa-undo text-xs"></i>
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="flex flex-col md:flex-row md:gap-6 items-start">
+
+                    <aside class="hidden md:block md:w-72 flex-shrink-0 sticky top-6">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+
+                            <!-- Header -->
+                            <div class="bg-gray-50 px-5 py-4 border-b border-gray-200">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-sliders-h text-blue-600"></i>
+                                    <span class="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                                        Filter Koleksi
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Body -->
+                            <div class="p-5 space-y-5">
+
+                                <input type="hidden" name="q" value="<%= query.q || '' %>">
+                                <input type="hidden" name="searchBy" value="<%= query.searchBy || 'title' %>">
+                                <input type="hidden" name="matchType" value="<%= query.matchType || 'contains' %>">
+                                <input type="hidden" name="sortBy" value="<%= query.sortBy || 'title' %>"
+                                    id="filterSortBy">
+                                <input type="hidden" name="sortOrder" value="<%= query.sortOrder || 'ASC' %>"
+                                    id="filterSortOrder">
+
+                                <div>
+                                    <label
+                                        class="text-xs font-semibold text-gray-500 mb-1 block uppercase">Kategori</label>
+                                    <select name="category" id="categorySelect"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                                        <option value="">Semua Kategori</option>
+                                        <% sidebarData.categories.forEach(item=> { %>
+                                            <option value="<%= item.id %>" <%=query.category==item.id ? 'selected' : ''
+                                                %>>
+                                                <%= item.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="text-xs font-semibold text-gray-500 mb-1 block uppercase">Subjek</label>
+                                    <select name="subject" id="subjectSelect"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                                        <option value="">Semua Subjek</option>
+                                        <% sidebarData.subjects.forEach(item=> { %>
+                                            <option value="<%= item.id %>" <%=query.subject==item.id ? 'selected' : ''
+                                                %>>
+                                                <%= item.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="text-xs font-semibold text-gray-500 mb-1 block uppercase">Tahun</label>
+                                    <select name="year" id="yearSelect"
+                                        class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                                        <option value="">Semua Tahun</option>
+                                        <% sidebarData.years.forEach(item=> { %>
+                                            <option value="<%= item.year %>" <%=query.year==item.year ? 'selected' : ''
+                                                %>>
+                                                <%= item.year %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold flex items-center justify-center gap-2">
+                                    <i class="fas fa-filter text-xs"></i> Terapkan Filter
+                                </button>
+
+                                <div class="pt-2 border-t border-gray-100 text-center space-y-2">
+                                    <a href="/search?id_ruangan=<%= query.id_ruangan %>"
+                                        class="text-xs text-gray-500 hover:text-blue-600 flex items-center justify-center gap-1">
+                                        <i class="fas fa-undo text-[10px]"></i> Reset Semua Filter
+                                    </a>
+
+                                    <% if (query.q || query.category || query.subject || query.year) { %>
+                                        <span
+                                            class="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold uppercase inline-block">
+                                            Filter Aktif
+                                        </span>
+                                        <% } %>
+                                </div>
+
+                            </div>
+                        </div>
+                    </aside>
+
+
+                    <div class="flex-1 flex flex-col min-w-0">
+
+                        <div
+                            class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6 flex-shrink-0 overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 md:hidden">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-search text-blue-600 text-sm"></i>
+                                    <span
+                                        class="text-sm font-bold text-gray-700 uppercase tracking-wide">Pencarian</span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 md:p-6">
+                                <h2 class="hidden md:flex text-xl font-bold text-gray-800 mb-5 items-center">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3 text-blue-600">
+                                        <i class="fas fa-search text-sm"></i>
+                                    </div>
+                                    <span>Pencarian Koleksi</span>
+                                </h2>
+
+                                <div class="flex flex-col md:flex-row gap-3">
+                                    <div class="flex-grow relative">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-search text-gray-400"></i>
+                                        </div>
+                                        <input type="text" name="q" value="<%= query.q || '' %>"
+                                            class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm text-gray-800 placeholder:text-gray-400"
+                                            placeholder="Masukkan kata kunci pencarian...">
                                     </div>
 
-                                            <div class="mt-2 pt-2 border-t border-gray-100 sm:hidden">
-                                                <div class="flex items-center gap-2 mb-1.5">
-                                                    <span class="text-[9px] font-semibold text-gray-500">Ketersediaan:</span>
-                                                    <span class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">
-                                                        <%= book.total_exemplars || 0 %> eksemplar
-                                                    </span>
+                                    <div class="grid grid-cols-2 md:flex gap-3 md:w-auto">
+                                        <div class="md:w-40">
+                                            <select name="searchBy"
+                                                class="w-full py-2.5 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                                <option value="title" <%=query.searchBy==='title' ? 'selected' : '' %>
+                                                    >Judul</option>
+                                                <option value="author" <%=query.searchBy==='author' ? 'selected' : '' %>
+                                                    >Pengarang</option>
+                                                <option value="publisher" <%=query.searchBy==='publisher' ? 'selected'
+                                                    : '' %>>Penerbit</option>
+                                                <option value="subject" <%=query.searchBy==='subject' ? 'selected' : ''
+                                                    %>>Subjek</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="md:w-44">
+                                            <select name="matchType"
+                                                class="w-full py-2.5 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                                <option value="contains" <%=query.matchType==='contains' ? 'selected'
+                                                    : '' %>>Salah Satu Isi</option>
+                                                <option value="startsWith" <%=query.matchType==='startsWith'
+                                                    ? 'selected' : '' %>>Dimulai Dengan</option>
+                                                <option value="endsWith" <%=query.matchType==='endsWith' ? 'selected'
+                                                    : '' %>>Diakhiri Dengan</option>
+                                                <option value="exact" <%=query.matchType==='exact' ? 'selected' : '' %>
+                                                    >Tepat (Exact)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="w-full md:w-auto">
+                                        <button type="submit"
+                                            class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
+                                            <span>Cari</span> <i class="fas fa-arrow-right text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 pt-4 border-t border-gray-100">
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                        <label class="text-sm font-semibold text-gray-600 flex items-center gap-2">
+                                            <i class="fas fa-sort-amount-down text-gray-400"></i>
+                                            <span>Urutkan Hasil:</span>
+                                        </label>
+
+                                        <div class="grid grid-cols-2 gap-2 md:hidden">
+                                            <select id="sortByMobile"
+                                                class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                onchange="window.applySorting()">
+                                                <option value="title" <%=(!query.sortBy || query.sortBy==='title' )
+                                                    ? 'selected' : '' %>>Judul (A-Z)</option>
+                                                <option value="updatedAt" <%=query.sortBy==='updatedAt' ? 'selected'
+                                                    : '' %>>Terakhir Diupdate</option>
+                                                <option value="createdAt" <%=query.sortBy==='createdAt' ? 'selected'
+                                                    : '' %>>Terakhir Ditambahkan</option>
+                                            </select>
+                                            <button type="button" id="sortOrderToggleMobile"
+                                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs hover:bg-gray-100 transition flex items-center justify-center gap-1.5"
+                                                onclick="window.toggleSortOrder()"
+                                                data-order="<%= query.sortOrder || 'ASC' %>">
+                                                <i id="sortOrderIconMobile"
+                                                    class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600"></i>
+                                                <span id="sortOrderTextMobile">
+                                                    <%= (query.sortOrder || 'ASC' )==='DESC' ? 'Turun' : 'Naik' %>
+                                                </span>
+                                            </button>
+                                        </div>
+
+                                        <div class="hidden md:flex gap-2 items-center">
+                                            <select id="sortByDesktop"
+                                                class="pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                onchange="window.applySorting()">
+                                                <option value="title" <%=(!query.sortBy || query.sortBy==='title' )
+                                                    ? 'selected' : '' %>>Judul (A-Z)</option>
+                                                <option value="updatedAt" <%=query.sortBy==='updatedAt' ? 'selected'
+                                                    : '' %>>Terakhir Diupdate</option>
+                                                <option value="createdAt" <%=query.sortBy==='createdAt' ? 'selected'
+                                                    : '' %>>Terakhir Ditambahkan</option>
+                                            </select>
+                                            <button type="button" id="sortOrderToggleDesktop"
+                                                class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+                                                onclick="window.toggleSortOrder()"
+                                                data-order="<%= query.sortOrder || 'ASC' %>">
+                                                <i id="sortOrderIconDesktop"
+                                                    class="fas <%= (query.sortOrder || 'ASC') === 'DESC' ? 'fa-sort-amount-down' : 'fa-sort-amount-up' %> text-blue-600"></i>
+                                                <span id="sortOrderTextDesktop">
+                                                    <%= (query.sortOrder || 'ASC' )==='DESC' ? 'Turun' : 'Naik' %>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 md:overflow-y-auto md:max-h-[calc(100vh-250px)] md:pr-2">
+                            <div class="space-y-4">
+                                <% if (books.length> 0) { %>
+                                    <% books.forEach(book=> { %>
+                                        <a href="/books/detail/<%= book.id %>?id_ruangan=<%= query.id_ruangan %>&origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>"
+                                            class="block bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 flex flex-row gap-3 group cursor-pointer active:scale-[0.98] overflow-hidden sm:rounded-lg sm:border-gray-200 sm:hover:border-blue-400 sm:hover:shadow-md sm:transition sm:active:scale-100 sm:p-4 sm:gap-4 p-3">
+                                            <div
+                                                class="w-16 h-20 sm:w-24 sm:h-32 bg-gradient-to-br from-gray-50 to-gray-100 sm:bg-gray-100 rounded-lg sm:rounded border border-gray-200 sm:border overflow-hidden flex justify-center items-center flex-shrink-0 shadow-sm sm:shadow-none">
+                                                <% if (book.image) { %>
+                                                    <img src="<%= book.image_full_path %>"
+                                                        class="w-full h-full object-cover sm:object-contain"
+                                                        alt="<%= book.title %>">
+                                                    <% } else { %>
+                                                        <div
+                                                            class="flex flex-col justify-center items-center p-1 sm:p-2">
+                                                            <i
+                                                                class="fas fa-book text-lg sm:text-3xl mb-0.5 sm:mb-1 text-gray-400"></i>
+                                                            <span
+                                                                class="text-[7px] sm:text-[9px] text-center text-gray-500 leading-tight hidden sm:block">SAMPUL
+                                                                BELUM TERSEDIA</span>
+                                                        </div>
+                                                        <% } %>
+                                            </div>
+
+                                            <div class="flex-grow text-xs sm:text-sm min-w-0 flex flex-col">
+                                                <h4 class="text-sm sm:text-base font-bold text-blue-700 group-hover:text-blue-800 sm:group-hover:text-blue-700 group-hover:underline cursor-pointer mb-1.5 sm:mb-2 line-clamp-2 leading-tight sm:leading-normal"
+                                                    onclick="window.location.href='/book/<%= book.id %>?origin_q=<%= query.q %>&origin_searchBy=<%= query.searchBy %>&origin_matchType=<%= query.matchType %>&origin_category=<%= query.category %>&origin_subject=<%= query.subject %>&origin_year=<%= query.year %>&origin_sortBy=<%= query.sortBy %>&origin_sortOrder=<%= query.sortOrder %>&origin_page=<%= currentPage %>'">
+                                                    <%= book.title %>
+                                                </h4>
+
+                                                <div class="space-y-1 sm:grid sm:grid-cols-1 sm:gap-y-1 text-gray-600">
+                                                    <div
+                                                        class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
+                                                        <span
+                                                            class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Kategori</span>
+                                                        <span
+                                                            class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">:
+                                                            <%= book.Category ? book.Category.name : '-' %></span>
+                                                    </div>
+
+                                                    <div
+                                                        class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
+                                                        <span
+                                                            class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Pengarang</span>
+                                                        <span
+                                                            class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">:
+                                                            <%= book.Authors.map(a=> a.name).join(", ") %></span>
+                                                    </div>
+
+                                                    <div
+                                                        class="flex items-start gap-1.5 sm:grid sm:grid-cols-[100px_1fr] sm:gap-0">
+                                                        <span
+                                                            class="font-semibold text-[10px] sm:text-sm text-gray-500 sm:text-gray-600 flex-shrink-0 sm:block">Penerbitan</span>
+                                                        <span
+                                                            class="text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-none sm:break-words">:
+                                                            <%= book.publish_place %> : <%= book.Publishers.map(p=>
+                                                                    p.name).join(", ") %>, <%= book.publish_year %>
+                                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[9px] rounded-md border border-gray-200 font-mono truncate max-w-full">
+                                                <div class="mt-2 pt-2 border-t border-gray-100 sm:hidden">
+                                                    <div class="flex items-center gap-2 mb-1.5">
+                                                        <span
+                                                            class="text-[9px] font-semibold text-gray-500">Ketersediaan:</span>
+                                                        <span
+                                                            class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">
+                                                            <%= book.total_exemplars || 0 %> eksemplar
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span
+                                                            class="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[9px] rounded-md border border-gray-200 font-mono truncate max-w-full">
+                                                            <%= book.call_number %>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                class="hidden sm:block sm:text-right sm:w-40 border-l border-gray-100 pl-4 flex-shrink-0">
+                                                <span
+                                                    class="text-xs font-semibold text-gray-500 block mb-1">Ketersediaan</span>
+                                                <div class="text-xs text-blue-600 font-medium mb-2">
+                                                    <%= book.total_exemplars || 0 %> eksemplar
+                                                </div>
+
+                                                <div class="mt-2">
+                                                    <span
+                                                        class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border inline-block break-all">
                                                         <%= book.call_number %>
                                                     </span>
                                                 </div>
                                             </div>
+                                        </a>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <div
+                                                    class="p-10 text-center bg-gray-50 border border-dashed border-gray-300 rounded">
+                                                    <p class="text-gray-500 font-medium">Data tidak ditemukan.</p>
+                                                </div>
+                                                <% } %>
                             </div>
-
-                                        <div class="hidden sm:block sm:text-right sm:w-40 border-l border-gray-100 pl-4 flex-shrink-0">
-                                            <span class="text-xs font-semibold text-gray-500 block mb-1">Ketersediaan</span>
-                                            <div class="text-xs text-blue-600 font-medium mb-2">
-                                                <%= book.total_exemplars || 0 %> eksemplar
-                                            </div>
-
-                                            <div class="mt-2">
-                                                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border inline-block break-all">
-                                                    <%= book.call_number %>
-                                                </span>
-                                            </div>
-                                        </div>
-                        </a>
-                    <% }) %>
-                <% } else { %>
-                    <div class="p-10 text-center bg-gray-50 border border-dashed border-gray-300 rounded">
-                        <p class="text-gray-500 font-medium">Data tidak ditemukan.</p>
-                    </div>
-                <% } %>
                         </div>
-            </div>
 
-                    <% if (totalPages > 1) { %>
-                        <div class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-1 sm:gap-2 flex-shrink-0">
-                    
-                    <% if (currentPage > 1) { %>
-                        <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= parseInt(currentPage) - 1 %>"
-                            class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm bg-white text-gray-600 hover:bg-blue-50 active:bg-blue-100 transition">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    <% } %>
+                        <% if (totalPages> 1) { %>
+                            <div
+                                class="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-1 sm:gap-2 flex-shrink-0">
 
-                    <% 
-                        let delta = 2; // Menampilkan 2 halaman di kiri dan 2 di kanan active page
-                        let left = parseInt(currentPage) - delta;
-                        let right = parseInt(currentPage) + delta;
-                        let range = [];
-                        let rangeWithDots = [];
-                        let l;
+                                <% if (currentPage> 1) { %>
+                                    <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= parseInt(currentPage) - 1 %>"
+                                        class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm bg-white text-gray-600 hover:bg-blue-50 active:bg-blue-100 transition">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <% } %>
 
-                        for (let i = 1; i <= totalPages; i++) {
-                            if (i == 1 || i == totalPages || (i >= left && i <= right)) {
-                                range.push(i);
-                            }
-                        }
+                                        <% let delta=2; // Menampilkan 2 halaman di kiri dan 2 di kanan active page let
+                                            left=parseInt(currentPage) - delta; let right=parseInt(currentPage) + delta;
+                                            let range=[]; let rangeWithDots=[]; let l; for (let i=1; i <=totalPages;
+                                            i++) { if (i==1 || i==totalPages || (i>= left && i <= right)) {
+                                                range.push(i); } } for (let i of range) { if (l) { if (i - l===2) {
+                                                rangeWithDots.push(l + 1); } else if (i - l !==1) {
+                                                rangeWithDots.push('...'); } } rangeWithDots.push(i); l=i; } %>
 
-                        for (let i of range) {
-                            if (l) {
-                                if (i - l === 2) {
-                                    rangeWithDots.push(l + 1);
-                                } else if (i - l !== 1) {
-                                    rangeWithDots.push('...');
-                                }
-                            }
-                            rangeWithDots.push(i);
-                            l = i;
-                        }
-                    %>
+                                                <% rangeWithDots.forEach(i=> { %>
+                                                    <% if (i==='...' ) { %>
+                                                        <span
+                                                            class="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-400">...</span>
+                                                        <% } else { %>
+                                                            <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= i %>"
+                                                                class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm transition-colors active:scale-95 <%= currentPage == i ? 'bg-blue-600 text-white border-blue-600 font-bold' : 'bg-white text-gray-600 hover:bg-blue-50' %>">
+                                                                <%= i %>
+                                                            </a>
+                                                            <% } %>
+                                                                <% }) %>
 
-                    <% rangeWithDots.forEach(i => { %>
-                        <% if (i === '...') { %>
-                                    <span class="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-400">...</span>
-                        <% } else { %>
-                            <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= i %>"
-                                class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm transition-colors active:scale-95 <%= currentPage == i ? 'bg-blue-600 text-white border-blue-600 font-bold' : 'bg-white text-gray-600 hover:bg-blue-50' %>">
-                                <%= i %>
-                            </a>
-                        <% } %>
-                    <% }) %>
+                                                                    <% if (currentPage < totalPages) { %>
+                                                                        <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= parseInt(currentPage) + 1 %>"
+                                                                            class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm bg-white text-gray-600 hover:bg-blue-50 active:bg-blue-100 transition">
+                                                                            <i class="fas fa-chevron-right"></i>
+                                                                        </a>
+                                                                        <% } %>
 
-                    <% if (currentPage < totalPages) { %>
-                        <a href="/search?id_ruangan=<%= query.id_ruangan %>&q=<%= query.q %>&searchBy=<%= query.searchBy %>&matchType=<%= query.matchType %>&category=<%= query.category %>&subject=<%= query.subject %>&year=<%= query.year %>&sortBy=<%= query.sortBy %>&sortOrder=<%= query.sortOrder %>&page=<%= parseInt(currentPage) + 1 %>"
-                                class="px-2.5 sm:px-3 py-1.5 sm:py-1 border rounded text-xs sm:text-sm bg-white text-gray-600 hover:bg-blue-50 active:bg-blue-100 transition">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    <% } %>
-
+                            </div>
+                            <% } %>
+                    </div>
                 </div>
-            <% } %>
-                </div>
-            </div>
-        </form>
+            </form>
         </main>
     </div>
 
@@ -410,18 +506,18 @@
             // Ambil elemen yang terlihat (mobile atau desktop)
             const sortBySelect = getVisibleElement('sortByMobile', 'sortByDesktop');
             const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
-            
+
             if (!sortBySelect) return;
-            
+
             const sortByValue = sortBySelect.value || 'title';
             const sortOrderValue = sortOrderToggle ? (sortOrderToggle.getAttribute('data-order') || 'ASC') : 'ASC';
-            
+
             // Update hidden inputs in filter forms (desktop dan mobile)
             const filterSortBy = document.getElementById('filterSortBy');
             const filterSortByMobile = document.getElementById('filterSortByMobile');
             const filterSortOrder = document.getElementById('filterSortOrder');
             const filterSortOrderMobile = document.getElementById('filterSortOrderMobile');
-            
+
             if (filterSortBy) {
                 filterSortBy.value = sortByValue;
             }
@@ -434,37 +530,37 @@
             if (filterSortOrderMobile) {
                 filterSortOrderMobile.value = sortOrderValue;
             }
-            
+
             // Debug log untuk memastikan update berhasil
             console.log('Updated filter sorting inputs:', { sortBy: sortByValue, sortOrder: sortOrderValue });
         }
 
         // Make functions globally accessible
-        window.applySorting = function() {
+        window.applySorting = function () {
             try {
                 // Ambil elemen yang terlihat (mobile atau desktop)
                 const sortBySelect = getVisibleElement('sortByMobile', 'sortByDesktop');
                 const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
-                
+
                 if (!sortBySelect) {
                     console.error('sortBy element not found');
                     return;
                 }
-                
+
                 const sortOrderValue = sortOrderToggle ? (sortOrderToggle.getAttribute('data-order') || 'ASC') : 'ASC';
-                
+
                 // Update hidden inputs in filter forms before redirect
                 updateFilterSortingInputs();
-                
+
                 // Get current URL parameters (handle array jika ada)
                 const params = new URLSearchParams(window.location.search);
-                
+
                 // Helper untuk get parameter (handle array - ambil nilai pertama)
                 const getParam = (key, defaultValue = '') => {
                     const value = params.get(key);
                     return value !== null ? value : defaultValue;
                 };
-                
+
                 // Get nilai filter dari form (prioritas: form > URL)
                 // Ini memastikan filter yang sedang aktif di form tetap terpreserve
                 const getFormValue = (name) => {
@@ -477,7 +573,7 @@
                             return val;
                         }
                     }
-                    
+
                     // Jika select tidak ada atau kosong, cari input (untuk q, searchBy, matchType)
                     const inputs = document.querySelectorAll(`input[name="${name}"]`);
                     for (let input of inputs) {
@@ -488,7 +584,7 @@
                     }
                     return '';
                 };
-                
+
                 // Get semua parameter filter dari form ATAU dari URL (prioritas: form > URL)
                 // Ini memastikan filter yang sedang aktif di form tetap terpreserve saat sorting diubah
                 const formCategory = getFormValue('category');
@@ -496,7 +592,7 @@
                 const formYear = getFormValue('year');
                 const formQ = getFormValue('q');
                 const currentIdRuangan = getParam('id_ruangan') || document.querySelector('input[name="id_ruangan"]')?.value || '';
-                
+
                 const urlParams = {
                     id_ruangan: currentIdRuangan,
                     q: formQ || getParam('q', ''),
@@ -509,13 +605,13 @@
                     sortBy: sortBySelect.value,
                     sortOrder: sortOrderValue
                 };
-                
+
                 // Debug: Log nilai dari form
                 console.log('Form values:', { category: formCategory, subject: formSubject, year: formYear, q: formQ });
-                
+
                 // Debug: Log parameter yang akan dikirim
                 console.log('Applying sorting with preserved filters:', urlParams);
-                
+
                 // Build URL with all parameters (preserve semua filter)
                 const queryString = Object.keys(urlParams)
                     .filter(key => {
@@ -525,7 +621,7 @@
                     })
                     .map(key => `${key}=${encodeURIComponent(urlParams[key])}`)
                     .join('&');
-                
+
                 // Redirect to new URL dengan semua parameter terpreserve
                 window.location.href = '/search?' + queryString;
             } catch (e) {
@@ -534,33 +630,33 @@
             }
         };
 
-        window.toggleSortOrder = function() {
+        window.toggleSortOrder = function () {
             try {
                 // Ambil elemen yang terlihat (mobile atau desktop)
                 const sortOrderToggle = getVisibleElement('sortOrderToggleMobile', 'sortOrderToggleDesktop');
                 const sortOrderIcon = getVisibleElement('sortOrderIconMobile', 'sortOrderIconDesktop');
                 const sortOrderText = getVisibleElement('sortOrderTextMobile', 'sortOrderTextDesktop');
-                
+
                 if (!sortOrderToggle) {
                     console.error('sortOrderToggle element not found');
                     return;
                 }
-                
+
                 const currentOrder = sortOrderToggle.getAttribute('data-order') || 'ASC';
                 const newOrder = currentOrder === 'ASC' ? 'DESC' : 'ASC';
-                
+
                 // Update data attribute untuk kedua elemen (mobile dan desktop)
                 const sortOrderToggleMobile = document.getElementById('sortOrderToggleMobile');
                 const sortOrderToggleDesktop = document.getElementById('sortOrderToggleDesktop');
                 if (sortOrderToggleMobile) sortOrderToggleMobile.setAttribute('data-order', newOrder);
                 if (sortOrderToggleDesktop) sortOrderToggleDesktop.setAttribute('data-order', newOrder);
-                
+
                 // Update icon and text untuk kedua elemen (mobile dan desktop)
                 const sortOrderIconMobile = document.getElementById('sortOrderIconMobile');
                 const sortOrderIconDesktop = document.getElementById('sortOrderIconDesktop');
                 const sortOrderTextMobile = document.getElementById('sortOrderTextMobile');
                 const sortOrderTextDesktop = document.getElementById('sortOrderTextDesktop');
-                
+
                 // Update mobile elements
                 if (sortOrderIconMobile && sortOrderTextMobile) {
                     if (newOrder === 'ASC') {
@@ -571,7 +667,7 @@
                         sortOrderTextMobile.textContent = 'Turun';
                     }
                 }
-                
+
                 // Update desktop elements
                 if (sortOrderIconDesktop && sortOrderTextDesktop) {
                     if (newOrder === 'ASC') {
@@ -582,10 +678,10 @@
                         sortOrderTextDesktop.textContent = 'Turun';
                     }
                 }
-                
+
                 // Update hidden inputs in filter forms immediately
                 updateFilterSortingInputs();
-                
+
                 // Visual feedback
                 sortOrderToggle.classList.add('ring-2', 'ring-blue-500');
                 setTimeout(() => {
@@ -601,45 +697,45 @@
 
         // Desktop selects
         if (document.getElementById('categorySelect')) {
-        new TomSelect('#categorySelect', {
-            allowEmptyOption: true,
-            placeholder: "Pilih kategori...",
-            dropdownClass: 'z-50 absolute tom-select-dropdown',
-            dropdownParent: 'body',
-            maxItems: 1,
-            maxOptions: null,
-            onInitialize: function() {
-                this.control_input.style.minWidth = '0';
-            }
-        });
+            new TomSelect('#categorySelect', {
+                allowEmptyOption: true,
+                placeholder: "Pilih kategori...",
+                dropdownClass: 'z-50 absolute tom-select-dropdown',
+                dropdownParent: 'body',
+                maxItems: 1,
+                maxOptions: null,
+                onInitialize: function () {
+                    this.control_input.style.minWidth = '0';
+                }
+            });
         }
-        
+
         if (document.getElementById('subjectSelect')) {
-        new TomSelect('#subjectSelect', {
-            allowEmptyOption: true,
-            placeholder: "Pilih subjek...",
-            dropdownClass: 'z-50 absolute tom-select-dropdown',
-            dropdownParent: 'body',
-            maxItems: 1,
-            maxOptions: null,
-            onInitialize: function() {
-                this.control_input.style.minWidth = '0';
-            }
-        });
+            new TomSelect('#subjectSelect', {
+                allowEmptyOption: true,
+                placeholder: "Pilih subjek...",
+                dropdownClass: 'z-50 absolute tom-select-dropdown',
+                dropdownParent: 'body',
+                maxItems: 1,
+                maxOptions: null,
+                onInitialize: function () {
+                    this.control_input.style.minWidth = '0';
+                }
+            });
         }
-        
+
         if (document.getElementById('yearSelect')) {
-        new TomSelect('#yearSelect', {
-            allowEmptyOption: true,
-            placeholder: "Pilih tahun...",
-            dropdownClass: 'z-50 absolute tom-select-dropdown',
-            dropdownParent: 'body',
-            maxItems: 1,
-            maxOptions: null,
-            onInitialize: function() {
-                this.control_input.style.minWidth = '0';
-            }
-        });
+            new TomSelect('#yearSelect', {
+                allowEmptyOption: true,
+                placeholder: "Pilih tahun...",
+                dropdownClass: 'z-50 absolute tom-select-dropdown',
+                dropdownParent: 'body',
+                maxItems: 1,
+                maxOptions: null,
+                onInitialize: function () {
+                    this.control_input.style.minWidth = '0';
+                }
+            });
         }
 
         // Mobile selects
@@ -651,12 +747,12 @@
                 dropdownParent: 'body',
                 maxItems: 1,
                 maxOptions: null,
-                onInitialize: function() {
+                onInitialize: function () {
                     this.control_input.style.minWidth = '0';
                 }
             });
         }
-        
+
         if (document.getElementById('subjectSelectMobile')) {
             new TomSelect('#subjectSelectMobile', {
                 allowEmptyOption: true,
@@ -665,12 +761,12 @@
                 dropdownParent: 'body',
                 maxItems: 1,
                 maxOptions: null,
-                onInitialize: function() {
+                onInitialize: function () {
                     this.control_input.style.minWidth = '0';
                 }
             });
         }
-        
+
         if (document.getElementById('yearSelectMobile')) {
             new TomSelect('#yearSelectMobile', {
                 allowEmptyOption: true,
@@ -679,7 +775,7 @@
                 dropdownParent: 'body',
                 maxItems: 1,
                 maxOptions: null,
-                onInitialize: function() {
+                onInitialize: function () {
                     this.control_input.style.minWidth = '0';
                 }
             });
@@ -687,46 +783,46 @@
 
         // Update filter form hidden inputs before form submission
         // This ensures sorting values are always current when filter is applied
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const filterForm = document.querySelector('form[action="/search"]');
             if (filterForm) {
-                filterForm.addEventListener('submit', function(e) {
+                filterForm.addEventListener('submit', function (e) {
                     // Update hidden inputs with current sorting values before submit
                     // Ini memastikan saat filter diterapkan, sorting tetap terpreserve
                     updateFilterSortingInputs();
                 });
             }
-            
+
             // Sync sorting inputs dengan nilai dari URL saat page load
             // Ini memastikan hidden inputs ter-sync dengan sorting yang aktif
             const urlParams = new URLSearchParams(window.location.search);
             const currentSortBy = urlParams.get('sortBy') || 'title';
             const currentSortOrder = urlParams.get('sortOrder') || 'ASC';
-            
+
             // Update hidden inputs dengan nilai dari URL
             const filterSortBy = document.getElementById('filterSortBy');
             const filterSortByMobile = document.getElementById('filterSortByMobile');
             const filterSortOrder = document.getElementById('filterSortOrder');
             const filterSortOrderMobile = document.getElementById('filterSortOrderMobile');
-            
+
             if (filterSortBy) filterSortBy.value = currentSortBy;
             if (filterSortByMobile) filterSortByMobile.value = currentSortBy;
             if (filterSortOrder) filterSortOrder.value = currentSortOrder;
             if (filterSortOrderMobile) filterSortOrderMobile.value = currentSortOrder;
-            
+
             // Update sorting UI dengan nilai dari URL
             const sortBySelect = document.getElementById('sortBy');
             const sortOrderToggle = document.getElementById('sortOrderToggle');
-            
+
             if (sortBySelect && sortBySelect.value !== currentSortBy) {
                 sortBySelect.value = currentSortBy;
             }
-            
+
             if (sortOrderToggle) {
                 sortOrderToggle.setAttribute('data-order', currentSortOrder);
                 const sortOrderIcon = document.getElementById('sortOrderIcon');
                 const sortOrderText = document.getElementById('sortOrderText');
-                
+
                 if (sortOrderIcon && sortOrderText) {
                     if (currentSortOrder === 'ASC') {
                         sortOrderIcon.className = 'fas fa-sort-amount-up text-blue-600';
@@ -743,15 +839,17 @@
 
     <style>
         .ts-control {
-            border: 1px solid #d1d5db !important; 
-            border-radius: 0.5rem !important;    
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
             padding: 0.5rem 0.75rem !important;
             background-color: #ffffff !important;
         }
+
         .ts-wrapper.focus .ts-control {
-            border-color: #3b82f6 !important;    
+            border-color: #3b82f6 !important;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
         }
+
         .tom-select-dropdown {
             border-radius: 0.5rem !important;
             margin-top: 4px !important;
@@ -759,6 +857,6 @@
         }
     </style>
 
-</div>
+    </div>
 
-<%- include('partials/footer') %>
+    <%- include('partials/footer') %>
