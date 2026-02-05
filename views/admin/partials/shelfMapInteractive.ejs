@@ -34,17 +34,20 @@
             }
         %>
         <%
-            const mapSizeClass = isPopupParam ? 'aspect-[2/1] max-h-[300px] sm:max-h-[400px]' : 'aspect-[16/9]';
+            const mapSizeClass = hasDbLayout ? '' : (isPopupParam ? 'aspect-[2/1] max-h-[300px]' : 'aspect-[16/9] min-h-[120px]');
+            const mapAspectStyle = hasDbLayout ? `aspect-ratio: ${dCols} / ${dRows};` : '';
         %>
+        <% if (hasDbLayout) { %><div class="max-h-[min(65vh,500px)] max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center" style="-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;"><% } %>
         <div 
             id="shelf-map-container" 
-            class="relative w-full <%= mapSizeClass %> bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden"
+            class="relative bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden <%= hasDbLayout ? 'inline-block flex-shrink-0' : mapSizeClass ? 'w-full ' + mapSizeClass : 'w-full' %>"
+            style="<%= mapAspectStyle %><%= hasDbLayout ? '; width: fit-content; max-width: 100%;' : '' %>"
             data-input-field-id="<%= typeof inputFieldId !== 'undefined' ? inputFieldId : 'shelf_location' %>"
         >
             <% if (hasDbLayout) { %>
-                <div class="shelf-map-grid w-full h-full grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden" style="
-                    grid-template-columns: repeat(<%= dCols %>, 1fr);
-                    grid-template-rows: repeat(<%= dRows %>, 1fr);
+                <div class="shelf-map-grid w-full h-full grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden min-h-0" style="
+                    grid-template-columns: repeat(<%= dCols %>, minmax(0, 1fr));
+                    grid-template-rows: repeat(<%= dRows %>, minmax(0, 1fr));
                     aspect-ratio: <%= dCols %> / <%= dRows %>;
                 ">
                     <% dItems.forEach(item => {
@@ -59,15 +62,15 @@
                         } else if (item.type === 'door') { bgClass = 'bg-orange-400'; borderClass = 'border-orange-500'; textClass = 'text-white'; }
                         else if (item.type === 'cabinet') { bgClass = 'bg-gray-400'; borderClass = 'border-gray-500'; textClass = 'text-white'; }
                         else if (item.type === 'rack') {
-                            if (isBookRack(item.name)) { bgClass = 'bg-blue-600 animate-pulse'; borderClass = 'border-blue-800'; textClass = 'text-white'; }
+                            if (isBookRack(item.name)) { bgClass = 'bg-blue-600'; borderClass = 'border-blue-800'; textClass = 'text-white'; }
                             else { bgClass = 'bg-gray-300'; borderClass = 'border-gray-500'; }
                         }
                         const isRack = item.type === 'rack' && (item.name != null && String(item.name).trim() !== '');
                         const rackName = isRack ? String(item.name).trim() : '';
-                        const clickableClass = isRack ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : 'cursor-default';
+                        const clickableClass = isRack ? 'cursor-pointer hover:brightness-105' : 'cursor-default';
                     %>
                         <div 
-                            class="flex items-center justify-center rounded-sm border-2 border-solid shadow-sm transition-all <%= bgClass %> <%= borderClass %> <%= textClass %> <%= clickableClass %> p-0.5 text-[8px] font-bold text-center overflow-hidden"
+                            class="flex items-center justify-center rounded-sm border-2 border-solid shadow-sm transition-colors duration-150 <%= bgClass %> <%= borderClass %> <%= textClass %> <%= clickableClass %> p-0.5 text-[8px] font-bold text-center overflow-hidden select-none"
                             <% if (isRack) { %>data-rack-id="<%= rackName.replace(/"/g, '&quot;') %>"<% } %>
                             style="grid-column: <%= c1 %> / span <%= spanC %>; grid-row: <%= r1 %> / span <%= spanR %>; z-index: 10;"
                         ><%= isRack ? rackName : '' %></div>
@@ -80,6 +83,8 @@
                 </div>
             <% } %>
         </div>
+        <% if (hasDbLayout) { %></div><% } %>
+        <% if (hasDbLayout) { %><p class="text-xs text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i>Geser denah jika ukuran rows/cols melebihi tampilan.</p><% } %>
         
         <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
             <div class="flex items-center gap-2">
@@ -102,7 +107,7 @@
                 <div class="w-4 h-4 bg-orange-400 border border-gray-400"></div> 
                 <span>Pintu</span>
             </div>
-            <div id="selected-rack-indicator" class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200 hidden">
+            <div id="selected-rack-indicator" class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200 min-w-[140px] <%= shelf ? '' : 'invisible' %>" aria-hidden="<%= shelf ? 'false' : 'true' %>">
                 <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div> 
                 <span class="text-blue-800 font-bold">Rak Terpilih: <span id="selected-rack-label">-</span></span>
             </div>
@@ -185,12 +190,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`    📍 Classes sebelum:`, rack.className);
                 
                 // Hapus semua class yang mungkin konflik
-                rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border', 
-                                     'bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 
-                                     'animate-pulse', 'z-10', 'bg-gray-200', 'bg-gray-400');
+                rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500', 
+                                     'bg-blue-600', 'text-white', 'border-blue-800', 
+                                     'z-10', 'bg-gray-200', 'bg-gray-400');
                 
-                // Tambah class highlight
-                rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
+                // Tambah class highlight (tanpa animate-pulse agar tidak terlihat zoom/berubah ukuran)
+                rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
                 console.log(`    📍 Classes setelah:`, rack.className);
                 
                 // Set inline style dengan !important untuk memastikan warna ter-apply
@@ -201,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rack.style.setProperty('border-width', '2px', 'important');
                 rack.style.setProperty('border-style', 'solid', 'important');
                 rack.style.setProperty('z-index', '10', 'important');
-                rack.style.setProperty('box-shadow', '0 0 15px rgba(37,99,235,0.6)', 'important');
+                rack.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(30,58,138,0.5)', 'important');
                 
                 // Verifikasi style ter-apply
                 const computedBg = window.getComputedStyle(rack).backgroundColor;
@@ -216,9 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`    ✅ Reflow dipaksa`);
                 
             } else {
-                // Reset rak yang tidak dipilih
-                rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
-                rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
+                // Reset rak yang tidak dipilih (tetap border-2 agar ukuran konsisten)
+                rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                 
                 // Reset inline style
                 rack.style.removeProperty('background-color');
@@ -241,10 +246,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (indicator && label) {
             if (rackId) {
                 label.textContent = rackIdClean;
-                indicator.classList.remove('hidden');
+                indicator.classList.remove('invisible');
+                indicator.setAttribute('aria-hidden', 'false');
                 console.log('✅ Indicator di-update ke:', rackIdClean);
             } else {
-                indicator.classList.add('hidden');
+                indicator.classList.add('invisible');
+                indicator.setAttribute('aria-hidden', 'true');
                 console.log('✅ Indicator disembunyikan');
             }
         } else {
@@ -415,20 +422,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             console.log('🔄 ⚠️ inputField.value kosong, reset semua highlight');
-            // Jika tidak ada nilai, pastikan tidak ada yang ter-highlight
-            allRacks.forEach(rack => {
-                rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
-                rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
-                
-                // Reset inline style
-                rack.style.removeProperty('background-color');
-                rack.style.removeProperty('color');
-                rack.style.removeProperty('border-color');
-                rack.style.removeProperty('border-width');
-                rack.style.removeProperty('border-style');
-                rack.style.removeProperty('z-index');
-                rack.style.removeProperty('box-shadow');
-            });
+            selectedRackId = null;
+            updateHighlight(null);
         }
         console.log('🔄 ========================================');
     }
@@ -482,8 +477,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Jika tidak ada nilai, reset highlight
                 const allRacks = mapContainer.querySelectorAll('[data-rack-id]');
                 allRacks.forEach(rack => {
-                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
-                    rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
+                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                    rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                     rack.style.removeProperty('background-color');
                     rack.style.removeProperty('color');
                     rack.style.removeProperty('border-color');
@@ -569,8 +564,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isSelected = candidates.some(c => c.replace(/\s/g, '').toUpperCase() === crNorm);
                 
                 if (isSelected) {
-                    rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
-                    rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
+                    rack.classList.remove('bg-gray-300', 'text-gray-700', 'border-gray-500');
+                    rack.classList.add('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
                     
                     // Set inline style dengan !important untuk memastikan warna ter-apply
                     rack.style.setProperty('background-color', '#2563eb', 'important'); // blue-600
@@ -579,10 +574,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     rack.style.setProperty('border-width', '2px', 'important');
                     rack.style.setProperty('border-style', 'solid', 'important');
                     rack.style.setProperty('z-index', '10', 'important');
-                    rack.style.setProperty('box-shadow', '0 0 15px rgba(37,99,235,0.6)', 'important');
+                    rack.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(30,58,138,0.5)', 'important');
                 } else {
-                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'border-2', 'animate-pulse', 'z-10');
-                    rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500/30', 'border');
+                    rack.classList.remove('bg-blue-600', 'text-white', 'border-blue-800', 'z-10');
+                    rack.classList.add('bg-gray-300', 'text-gray-700', 'border-gray-500');
                     
                     // Reset inline style
                     rack.style.removeProperty('background-color');
@@ -600,7 +595,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const label = document.getElementById('selected-rack-label');
             if (indicator && label) {
                 label.textContent = rackId;
-                indicator.classList.remove('hidden');
+                indicator.classList.remove('invisible');
+                indicator.setAttribute('aria-hidden', 'false');
             }
         };
     }

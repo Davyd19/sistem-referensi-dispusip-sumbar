@@ -171,13 +171,13 @@
                     </h3>
                 </div>
                 <!-- Body Modal (Map) -->
-                <div class="p-4 sm:p-5 md:p-6 flex-1 overflow-y-auto sm:overflow-y-visible min-h-0">
+                <div class="p-4 sm:p-5 md:p-6 flex-1 overflow-y-auto min-h-0">
                     <p class="text-xs sm:text-sm text-gray-600 mb-4 text-center sm:text-left">
                         <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                         Klik pada rak di denah di bawah ini untuk memilih lokasi rak buku.
                     </p>
                     <!-- Include map interaktif di dalam popup -->
-                    <div id="shelf-map-popup-container" class="flex justify-center">
+                    <div id="shelf-map-popup-container" class="flex justify-center items-center max-w-full min-w-0 overflow-hidden">
                         <%- include('partials/shelfMapInteractive', { inputFieldId: 'shelf_location', isPopup: true, layoutJson: typeof layoutJson !== 'undefined' ? layoutJson : null, shelfLocation: '' }) %>
                     </div>
                 </div>
