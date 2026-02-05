@@ -1,4 +1,17 @@
-<%- include('partials/header') %>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Sistem Referensi</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans">
+
+<main class="flex-grow w-full px-6 py-4">
 
 </main>
 
@@ -47,16 +60,19 @@
         <div class="text-center mb-16 animate-enter" style="animation-delay: 0.1s;">
             <h1 class="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">
                 Selamat Datang di <br class="hidden md:block" />
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+                <span class="text-blue-600">
                     SIULAN
                 </span>
+
             </h1>
-            <p class="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
-                Pusat layanan informasi dan referensi Dinas Kearsipan dan Perpustakaan Provinsi Sumatera Barat.
+            <p class="text-slate-500 text-lg max-w-3xl mx-auto leading-relaxed">
+                Sistem Informasi Unit Layanan Dinas Kearsipan dan Perpustakaan Provinsi Sumatera Barat.
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 
+            max-w-4xl mx-auto place-items-center">
+
 
             <a href="/pilih-ruangan" class="group relative animate-enter" style="animation-delay: 0.2s;">
                 <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-500 group-hover:scale-105"></div>
@@ -74,7 +90,7 @@
                 </div>
             </a>
 
-            <a href="/buku-tamu" class="group relative animate-enter" style="animation-delay: 0.3s;">
+            <!-- <a href="/buku-tamu" class="group relative animate-enter" style="animation-delay: 0.3s;">
                 <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-500 group-hover:scale-105"></div>
                 <div class="relative h-full bg-white/80 backdrop-blur-xl border border-white/50 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/90">
                     <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-all duration-300 shadow-inner group-hover:shadow-lg group-hover:scale-110">
@@ -88,7 +104,7 @@
                         ISI KEHADIRAN <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-2 transition-transform"></i>
                     </div>
                 </div>
-            </a>
+            </a> -->
 
             <a href="/admin/login" class="group relative animate-enter" style="animation-delay: 0.4s;">
                 <div class="absolute inset-0 bg-gradient-to-r from-rose-500 to-red-600 rounded-3xl blur opacity-20 group-hover:opacity-35 transition duration-500 group-hover:scale-105"></div>
@@ -118,4 +134,4 @@
 </div>
 
 <main class="hidden">
-<%- include('partials/footer') %>
+<%- include('partials/footer') %>   

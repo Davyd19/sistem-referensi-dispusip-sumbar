@@ -23,6 +23,13 @@ module.exports = {
             if (!id_ruangan) {
                 return res.redirect('/pilih-ruangan'); 
             }
+            // Kita ambil detail ruangan untuk ditampilkan di Header
+            const currentRuangan = await Ruangan.findByPk(id_ruangan);
+            
+            // Jika ruangan tidak valid (user iseng ganti ID di URL), kembalikan ke pilih ruangan
+            if (!currentRuangan) {
+                return res.redirect('/pilih-ruangan');
+            }
             // Helper function untuk handle array parameters (karena ada multiple form dengan name yang sama)
             const getFirstValue = (value, defaultValue = "") => {
                 if (Array.isArray(value)) {
@@ -404,6 +411,7 @@ module.exports = {
                     subjects,
                     years: yearsRaw
                 },
+                currentRuangan: currentRuangan,
                 query: {
                     id_ruangan: id_ruangan,
                     q: normalizedQ, // Gunakan normalizedQ untuk render
