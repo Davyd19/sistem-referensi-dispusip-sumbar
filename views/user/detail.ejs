@@ -251,9 +251,8 @@
                     </div>
                     <% } %>
 
-                        <!-- PANGGIL PARTIAL DENAH -->
-                        <%- include('partials/shelfMap', { shelfLocation: book.shelf_location, layoutJson:
-                            book.layout_json }) %>
+                        <!-- PANGGIL PARTIAL DENAH (sama seperti Manajemen Rak, muat dalam frame) -->
+                        <%- include('../admin/partials/shelfMapInteractive', { shelfLocation: book.shelf_location, layoutJson: book.layout_json, inputFieldId: null, isPopup: false, compactFrame: true, showHeader: true }) %>
 
             </div>
 

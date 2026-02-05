@@ -1,5 +1,5 @@
 <%- include('partials/header') %>
-%> <div class="p-6">
+<div class="p-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">🏢 Kelola Ruangan OPAC</h1>
         <a href="/admin/rooms/add" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold shadow transition flex items-center gap-2">
@@ -7,11 +7,10 @@
         </a>
     </div>
 
-    <% if (typeof query !== 'undefined' && query.success) { %>
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-            <strong class="font-bold">Sukses!</strong> Data berhasil diproses.
-        </div>
-    <% } %>
+    <div id="success-alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 pr-10 rounded relative mb-4 hidden">
+        <strong class="font-bold">Sukses!</strong> <span id="success-message">Data berhasil diproses.</span>
+        <button type="button" onclick="this.closest('#success-alert').classList.add('hidden')" class="absolute top-2 right-2 text-green-600 hover:text-green-800 text-xl leading-none" aria-label="Tutup">&times;</button>
+    </div>
 
     <div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -56,3 +55,43 @@
         </table>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alertEl = document.getElementById('success-alert');
+    const msgEl = document.getElementById('success-message');
+    if (!alertEl || !msgEl) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const successParam = urlParams.get('success');
+    const fromStorage = sessionStorage.getItem('room_success');
+    if (successParam || fromStorage) {
+        if (successParam === 'created') {
+            msgEl.textContent = 'Ruangan baru berhasil ditambahkan.';
+        } else if (successParam === 'updated') {
+            msgEl.textContent = 'Data ruangan berhasil diperbarui.';
+        } else if (successParam === 'deleted') {
+            msgEl.textContent = 'Ruangan berhasil dihapus.';
+        } else if (fromStorage) {
+            try {
+                const s = JSON.parse(fromStorage);
+                msgEl.textContent = s.message || 'Data berhasil diproses.';
+            } catch (e) {
+                msgEl.textContent = 'Data berhasil diproses.';
+            }
+        }
+        alertEl.classList.remove('hidden');
+        if (successParam) {
+            sessionStorage.setItem('room_success', JSON.stringify({ message: msgEl.textContent }));
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            sessionStorage.removeItem('room_success');
+        }
+        // Auto-hilang setelah 5 detik
+        setTimeout(function() {
+            alertEl.style.transition = 'opacity 0.5s ease';
+            alertEl.style.opacity = '0';
+            setTimeout(function() { alertEl.classList.add('hidden'); alertEl.style.opacity = ''; }, 500);
+        }, 5000);
+    }
+});
+</script>

@@ -1,3 +1,6 @@
+<style>
+.shelf-rack-cell-user .shelf-rack-label-user { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: clamp(6px, 1.2vmin, 10px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
+</style>
 <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
     <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
         <h3 class="font-bold text-gray-700 flex items-center">
@@ -5,7 +8,7 @@
         </h3>
     </div>
 
-    <div class="p-6 overflow-auto max-h-[min(70vh,600px)] max-w-full min-w-0">
+    <div class="p-6 overflow-hidden max-w-full min-w-0">
         <% 
             let shelfRaw = shelfLocation || '';
             // Simpan & cocokkan berdasarkan nama rak persis (toleran legacy "Rak X" vs "X")
@@ -14,27 +17,24 @@
             const shelfKeyNoRak = normKey(String(shelfRaw || '').replace(/^Rak\s+/i, ''));
             // Check if we have dynamic layout JSON
             let hasDynamicLayout=false; let dRows=12;
-            let dCols=16; let dItems=[]; if (layoutJson) { try { // Handle if layoutJson is string or object const
+            let dCols=16; let dItems=[]; if (layoutJson) { try { const
             lData=typeof layoutJson==='string' ? JSON.parse(layoutJson) : layoutJson; if (lData && lData.items) {
             hasDynamicLayout=true; dRows=lData.rows || 12; dCols=lData.cols || 16; dItems=lData.items || []; } }
-            catch(e) { console.error("Error parsing layout JSON", e); } } %>
+            catch(e) { console.error("Error parsing layout JSON", e); } }
+            const hasRack = dItems.some(it => it.type === 'rack');
+            const hasTablePustakawan = dItems.some(it => it.type === 'table' && (it.role === 'librarian' || (it.name && /pustakawan|admin/i.test(it.name))));
+            const hasTablePengunjung = dItems.some(it => it.type === 'table' && !(/pustakawan|admin/i.test(it.name || '')) && !(/tamu/i.test(it.name || '')));
+            const hasTableTamu = dItems.some(it => it.type === 'table' && (it.role === 'guest' || (it.name && /tamu/i.test(it.name))));
+            const hasDoor = dItems.some(it => it.type === 'door');
+            %>
 
             <% if (hasDynamicLayout) { %>
-                <!-- DYNAMIC GRID LAYOUT - scroll jika terlalu besar, denah di tengah -->
-                <div class="relative w-full overflow-auto max-w-full min-w-0 flex justify-center items-center" style="max-height: min(65vh, 500px);">
-                    <!-- Grid Container - proporsi mengikuti rows×cols dari layout -->
-                    <div class="flex-shrink-0" style="
-                    display: grid;
-                    grid-template-columns: repeat(<%= dCols %>, minmax(0, 1fr));
-                    grid-template-rows: repeat(<%= dRows %>, minmax(0, 1fr));
-                    gap: clamp(2px, 0.6vw, 4px);
-                    aspect-ratio: <%= dCols %> / <%= dRows %>;
-                    width: 100%;
-                    max-width: 100%;
-                    background-color: #f9fafb;
-                    padding: clamp(6px, 1.2vw, 10px);
-                    border: 1px solid #e5e7eb;
-                    border-radius: 8px;
+                <!-- DYNAMIC GRID LAYOUT - menyesuaikan frame referensi 25×40 -->
+                <div id="shelf-map-frame-user" class="relative w-full min-h-[180px] overflow-hidden max-w-full min-w-0 flex justify-center items-center p-2" style="max-height: min(38vh, 280px);">
+                    <div id="shelf-map-container-user" class="flex-shrink-0 bg-white border border-gray-300 rounded-lg overflow-hidden" data-cols="<%= dCols %>" data-rows="<%= dRows %>">
+                        <div id="shelf-map-grid-user" class="shelf-map-grid-user grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden" style="
+                    grid-template-columns: repeat(<%= dCols %>, 1fr);
+                    grid-template-rows: repeat(<%= dRows %>, 1fr);
                 ">
                         <!-- ITEMS OVERLAY (tanpa background kotak-kotak) -->
                         <% dItems.forEach(item=> {
@@ -83,39 +83,70 @@
                             grid-column: <%= item.c1 %> / span <%= item.c2 - item.c1 + 1 %>;
                             grid-row: <%= item.r1 %> / span <%= item.r2 - item.r1 + 1 %>;
                             z-index: 10;
-                        " class="relative flex items-center justify-center p-1 rounded-sm border shadow-sm transition-transform hover:scale-105 <%= bgClass %> <%= borderClass %>">
-                                                <span
-                                                    class="<%= textClass %> text-[9px] font-bold text-center leading-tight overflow-hidden break-words px-0.5">
+                        " class="shelf-rack-cell-user relative flex items-center justify-center p-1 rounded-sm border shadow-sm transition-colors <%= bgClass %> <%= borderClass %>">
+                                                <span class="shelf-rack-label-user <%= textClass %> font-bold px-0.5">
                                                         <%= item.type === 'rack' ? (item.name || '') : '' %>
                                                 </span>
                                             </div>
                                             <% }); %>
+                        </div>
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i>Geser denah jika ukuran melebihi tampilan.</p>
+                <script>
+                (function() {
+                    const frame = document.getElementById('shelf-map-frame-user');
+                    const container = document.getElementById('shelf-map-container-user');
+                    const grid = document.getElementById('shelf-map-grid-user');
+                    if (!frame || !container || !grid) return;
+                    function fit() {
+                        const cols = parseInt(container.getAttribute('data-cols') || 40, 10);
+                        const rows = parseInt(container.getAttribute('data-rows') || 25, 10);
+                        var pw = frame.clientWidth - 24, ph = frame.clientHeight - 24;
+                        if (pw <= 0 || ph <= 0) {
+                            pw = Math.max(400, (window.innerWidth || 800) - 100);
+                            ph = Math.max(320, Math.min(500, (window.innerHeight || 600) * 0.5));
+                        }
+                        const gap = 2, pad = 8;
+                        const availW = pw - (cols - 1) * gap - pad;
+                        const availH = ph - (rows - 1) * gap - pad;
+                        const size = Math.max(6, Math.min(Math.floor(availW / cols), Math.floor(availH / rows)));
+                        const totalW = cols * size + (cols - 1) * gap + pad;
+                        const totalH = rows * size + (rows - 1) * gap + pad;
+                        grid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + size + 'px)';
+                        grid.style.gridTemplateRows = 'repeat(' + rows + ', ' + size + 'px)';
+                        container.style.width = totalW + 'px';
+                        container.style.height = totalH + 'px';
+                    }
+                    fit();
+                    requestAnimationFrame(fit);
+                    setTimeout(fit, 100);
+                    var ro = new ResizeObserver(fit);
+                    ro.observe(frame);
+                })();
+                </script>
 
                 <div class="mt-4 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
-                    <div class="flex items-center gap-2">
+                    <% if (hasRack) { %><div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div>
                         <span>Rak Buku</span>
-                    </div>
-                    <div class="flex items-center gap-2">
+                    </div><% } %>
+                    <% if (hasTablePustakawan) { %><div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-teal-400 border border-gray-400"></div>
                         <span>Meja Petugas</span>
-                    </div>
-                    <div class="flex items-center gap-2">
+                    </div><% } %>
+                    <% if (hasTablePengunjung) { %><div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-red-400 border border-gray-400"></div>
                         <span>Meja Pengunjung</span>
-                    </div>
-                    <div class="flex items-center gap-2">
+                    </div><% } %>
+                    <% if (hasDoor) { %><div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-orange-400 border border-gray-400"></div>
                         <span>Pintu</span>
-                    </div>
-                    <div class="flex items-center gap-2">
+                    </div><% } %>
+                    <% if (hasTableTamu) { %><div class="flex items-center gap-2">
                         <div class="w-4 h-4 bg-green-400 border border-gray-400"></div>
                         <span>Meja Buku Tamu</span>
-                    </div>
+                    </div><% } %>
                     <% if (shelfKey) { %>
                         <div class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200">
                             <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div>

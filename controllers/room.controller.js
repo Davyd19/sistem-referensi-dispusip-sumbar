@@ -75,6 +75,10 @@ module.exports = {
                     error: "Desain denah ruangan wajib diisi. Tambahkan minimal satu item (rak, meja, atau pintu) ke denah sebelum menyimpan."
                 });
             }
+            const rows = Math.min(60, Math.max(4, parseInt(parsedLayout?.rows, 10) || 25));
+            const cols = Math.min(60, Math.max(4, parseInt(parsedLayout?.cols, 10) || 40));
+            parsedLayout.rows = rows;
+            parsedLayout.cols = cols;
 
             // Cek apakah username sudah ada
             const existingUser = await User.findOne({ where: { username } });
@@ -155,7 +159,10 @@ module.exports = {
             const roomUpdate = { nama_ruangan };
             if (layout_json != null && String(layout_json).trim() !== '') {
                 try {
-                    roomUpdate.layout_json = JSON.parse(layout_json);
+                    const parsed = JSON.parse(layout_json);
+                    parsed.rows = Math.min(60, Math.max(4, parseInt(parsed?.rows, 10) || 25));
+                    parsed.cols = Math.min(60, Math.max(4, parseInt(parsed?.cols, 10) || 40));
+                    roomUpdate.layout_json = parsed;
                 } catch (e) {
                     return res.redirect(`/admin/rooms/edit/${id}?error=layout`);
                 }

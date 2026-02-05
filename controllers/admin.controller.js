@@ -339,16 +339,11 @@ module.exports = {
                 page = 1, incomplete = ""
             } = req.query;
 
-            // --- PROTEKSI & FILTER RUANGAN ---
-            // 1. Ambil ID ruangan yang dikelola admin ini
-            const adminId = req.user.id; // Diambil dari middleware isAdminLoggedIn
+            const adminId = req.user.id;
             const ruanganAdmin = await Ruangan.findOne({ 
                 where: { id_admin_ruangan: adminId } 
             });
 
-            // Jika admin tidak punya ruangan (misal super_admin mengakses halaman ini tanpa filter)
-            // Anda bisa memutuskan apakah menampilkan semua atau memberikan error.
-            // Di sini kita proteksi agar admin_ruangan hanya melihat miliknya.
             if (!ruanganAdmin && req.user.role !== 'super_admin') {
                 return res.status(403).send("Akses ditolak: Anda tidak memiliki otoritas atas ruangan manapun.");
             }
@@ -445,16 +440,38 @@ module.exports = {
                 ];
             }
 
-            // 6. Eksekusi Query
-            const { count, rows: books } = await Book.findAndCountAll({
+            // 6. Eksekusi Query (Tahap 1: Ambil ID unik dengan aman)
+            const bookIdsResult = await Book.findAll({
                 where: whereCondition,
-                include: includeOptions,
+                // Include minimal hanya jika ada filter yang aktif (seperti subjek/author)
+                include: includeOptions.filter(opt => opt.where || (subject && opt.model === Subject)),
+                attributes: ['id'],
+                group: ['Book.id'], // Ini untuk memastikan 1 baris = 1 judul
                 order: [['updatedAt', 'DESC']],
                 limit: limit,
                 offset: offset,
+                subQuery: false,
+                raw: true
+            });
+
+            const targetIds = bookIdsResult.map(b => b.id);
+
+            // Eksekusi Query (Tahap 2: Ambil data lengkap untuk ID tersebut)
+            let books = [];
+            if (targetIds.length > 0) {
+                books = await Book.findAll({
+                    where: { id: { [Op.in]: targetIds } },
+                    include: includeOptions, // Ambil semua: Category, Authors, Publishers, Subjects, copies
+                    order: [['updatedAt', 'DESC']]
+                });
+            }
+
+            // Eksekusi Query (Tahap 3: Hitung total judul untuk navigasi page)
+            const count = await Book.count({
+                where: whereCondition,
+                include: includeOptions.filter(opt => opt.where || (subject && opt.model === Subject)),
                 distinct: true,
-                col: 'id',
-                subQuery: false 
+                col: 'id'
             });
 
             // 7. Hitung total eksemplar (Hanya di ruangan terkait)
@@ -498,7 +515,7 @@ module.exports = {
                 totalBook: totalFilteredCopies,
                 currentPage,
                 totalPages: Math.ceil(count / limit),
-                limit,
+                limit: limit,
                 query: req.query,
                 allCategories,
                 allSubjects,
@@ -615,6 +632,8 @@ module.exports = {
                 no_induk: 'B001',
                 barcode: 'tambahkan bintang(*)sebelum inputbarcode contoh: *00000173817', // CONTOH DENGAN BINTANG
                 publishers: 'Bentang Pustaka',
+                subjects: 'Novel',
+                image: 'https://upload.wikimedia.org/wikipedia/id/8/8e/Laskar_pelangi_sampul.jpg',
                 subjects: 'Novel'
             });
 
@@ -629,6 +648,10 @@ module.exports = {
 
     importExcel: async (req, res) => {
         try {
+            console.log(`\n${'='.repeat(60)}`);
+            console.log(`[IMPORT EXCEL] Memulai proses import...`);
+            console.log(`${'='.repeat(60)}\n`);
+
             if (!req.file) return res.status(400).send("Tidak ada file yang diunggah");
 
             const adminId = req.user.id;
@@ -682,6 +705,19 @@ module.exports = {
             });
 
             for (const data of booksData) {
+                // 1. LOGIKA PROSES GAMBAR (DOWNLOAD VS NAMA FILE)
+                let finalImageName = null;
+                if (data.imageInput) {
+                    if (data.imageInput.startsWith('http')) {
+                        // Jika link, download gambarnya
+                        finalImageName = await downloadImage(data.imageInput, data.title);
+                    } else {
+                        // Jika nama file (misal: "buku.jpg"), langsung ambil namanya
+                        // Kita hapus pengecekan fs.existsSync agar nama file dari export teman tetap masuk ke DB
+                        finalImageName = data.imageInput;
+                    }
+                }
+
                 let book = await Book.findOne({ 
                     where: {
                         [Op.and]: [
@@ -709,13 +745,19 @@ module.exports = {
                         abstract: data.abstract,
                         category_id: cat.id,
                         id_ruangan: idRuangan,
-                        image: null 
+                        image: finalImageName
                     });
                     successCount++;
                 } else {
+                    // 2. LOGIKA UPDATE GAMBAR UNTUK BUKU LAMA
+                    // Jika buku sudah ada tapi belum punya gambar di database, update dengan info dari Excel
+                    if (finalImageName && (!book.image || book.image === '')) {
+                        await book.update({ image: finalImageName });
+                    }
                     existingCount++;
                 }
 
+                // 3. LOGIKA NOMOR INDUK & EKSEMPLAR
                 if (data.noInduk) {
                     const [copy, copyCreated] = await BookCopy.findOrCreate({
                         where: { no_induk: data.noInduk }, 
@@ -726,7 +768,6 @@ module.exports = {
                         }
                     });
 
-                    // PERBAIKAN: Jika eksemplar sudah ada, tetap update barcodenya agar sinkron dengan Excel
                     if (!copyCreated) {
                         await copy.update({ 
                             no_barcode: data.barcode || copy.no_barcode,
@@ -738,6 +779,7 @@ module.exports = {
                     await book.update({ stock_total: countTotal });
                 }
 
+                // 4. LOGIKA RELASI LAIN (AUTHOR, PUBLISHER, SUBJECT)
                 const importAuthorWithRole = async (input, roleName) => {
                     if (!input) return;
                     const names = String(input).split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
@@ -783,13 +825,12 @@ module.exports = {
                 q, searchBy, matchType, category, subject, year, incomplete, page 
             } = req.body;
 
-            // 1. Identifikasi Ruangan Admin yang Login (Sama seperti di listBooks)
+            // 1. Identifikasi Ruangan Admin yang Login
             const adminId = req.user.id;
             const ruanganAdmin = await Ruangan.findOne({ 
                 where: { id_admin_ruangan: adminId } 
             });
 
-            // Proteksi: Pastikan admin memiliki otoritas
             if (!ruanganAdmin && req.user.role !== 'super_admin') {
                 return res.status(403).send("Akses ditolak: Anda tidak memiliki otoritas atas ruangan manapun.");
             }
@@ -804,19 +845,25 @@ module.exports = {
                 return res.status(400).send("Konfirmasi salah.");
             }
 
-            // 2. Inisialisasi Where Condition dengan FILTER RUANGAN (Kunci Perbaikan)
+            // 2. Membangun Where Condition untuk pencarian data sebelum dihapus
             let whereCondition = {};
-            if (idRuangan) {
-                whereCondition.id_ruangan = idRuangan; // Pastikan hanya menghapus di ruangan ini
-            }
-            
-            // --- Terapkan filter yang sama dengan listBooks ---
+            if (idRuangan) whereCondition.id_ruangan = idRuangan;
             if (category) whereCondition.category_id = category;
             if (year) whereCondition.publish_year = year;
-            
-            // Filter Subjek (menggunakan include nanti)
-            if (subject) whereCondition['$Subjects.id$'] = subject;
 
+            // Include options untuk pencarian relasi (Subject)
+            const includeOptions = [
+                { model: Subject, as: 'Subjects', required: false },
+                { model: Category, required: false }
+            ];
+
+            if (subject) {
+                const subOpt = includeOptions.find(opt => opt.as === 'Subjects');
+                subOpt.where = { id: subject };
+                subOpt.required = true;
+            }
+
+            // Logika Pencarian Kata Kunci
             if (q) {
                 let searchValue = (Array.isArray(q) ? q[0] : String(q)).trim();
                 let operator = Op.like;
@@ -827,8 +874,11 @@ module.exports = {
 
                 if (searchBy === "title") whereCondition.title = { [operator]: searchValue };
                 else if (searchBy === "isbn") whereCondition.isbn = { [operator]: searchValue };
-                else if (searchBy === "subject") whereCondition['$Subjects.name$'] = { [operator]: searchValue };
-                else if (searchBy === "category") whereCondition['$Category.name$'] = { [operator]: searchValue };
+                else if (searchBy === "subject") {
+                    const subOpt = includeOptions.find(opt => opt.as === 'Subjects');
+                    subOpt.where = { name: { [operator]: searchValue } };
+                    subOpt.required = true;
+                }
             }
 
             if (incomplete === "1") {
@@ -841,63 +891,49 @@ module.exports = {
                 ];
             }
 
-            // 3. Logika Eksekusi Hapus
+            let booksToDelete = [];
+
+            // 3. Ambil data buku DULU untuk mendapatkan daftar nama filenya
             if (deleteAll === 'true') {
                 const excluded = Array.isArray(excludeIds) ? excludeIds : (excludeIds ? [excludeIds] : []);
-                
-                // Tambahkan pengecualian ID yang di-uncheck
                 whereCondition.id = { [Op.notIn]: excluded };
 
-                // Ambil data untuk cleanup gambar
-                const booksToDelete = await Book.findAll({
+                booksToDelete = await Book.findAll({
                     where: whereCondition,
-                    include: [
-                        { model: Subject, as: 'Subjects', required: false },
-                        { model: Category, required: false }
-                    ],
+                    include: includeOptions,
                     attributes: ['id', 'image']
                 });
-                
-                const deleteIds = booksToDelete.map(b => b.id);
-                if (deleteIds.length === 0) return res.redirect(redirectUrl);
+            } else {
+                const ids = Array.isArray(bookIds) ? bookIds : [bookIds];
+                if (!ids || ids.length === 0) return res.redirect(redirectUrl);
 
-                // Hapus buku (Hanya yang id-nya ditemukan di ruangan tersebut)
-                await Book.destroy({
-                    where: { id: { [Op.in]: deleteIds } }
+                booksToDelete = await Book.findAll({
+                    where: { 
+                        id: { [Op.in]: ids },
+                        ...(idRuangan && { id_ruangan: idRuangan })
+                    },
+                    attributes: ['id', 'image']
                 });
-                
-                // Cleanup gambar
-                const uniqueImages = [...new Set(booksToDelete.map(b => b.image).filter(img => img))];
-                for (const imageFilename of uniqueImages) {
-                    await cleanupUnusedImage(imageFilename);
-                }
-                
-                return res.redirect("/admin/books?deleteSuccess=all");
             }
 
-            // Logika Manual (Checklist beberapa buku saja)
-            const idsToDelete = Array.isArray(bookIds) ? bookIds : [bookIds];
-            if (!idsToDelete || idsToDelete.length === 0) return res.redirect(redirectUrl);
+            if (booksToDelete.length === 0) return res.redirect(redirectUrl);
 
-            // Proteksi Tambahan: Pastikan ID yang dikirim memang milik ruangan admin tersebut
-            const manualWhere = { id: { [Op.in]: idsToDelete } };
-            if (idRuangan) manualWhere.id_ruangan = idRuangan;
+            // Simpan daftar ID dan nama file gambar unik ke memori
+            const deleteIds = booksToDelete.map(b => b.id);
+            const imagesToCleanup = [...new Set(booksToDelete.map(b => b.image).filter(img => img))];
 
-            const booksToDelete = await Book.findAll({
-                where: manualWhere,
-                attributes: ['image']
+            // 4. HAPUS DARI DATABASE (Lakukan ini lebih dulu)
+            await Book.destroy({
+                where: { id: { [Op.in]: deleteIds } }
             });
 
-            const deletedCount = await Book.destroy({
-                where: manualWhere
-            });
-
-            const uniqueImages = [...new Set(booksToDelete.map(b => b.image).filter(img => img))];
-            for (const imageFilename of uniqueImages) {
+            // 5. BERSIHKAN FILE GAMBAR (Setelah data di DB hilang, Book.count akan jadi 0)
+            for (const imageFilename of imagesToCleanup) {
                 await cleanupUnusedImage(imageFilename);
             }
 
-            res.redirect(`${redirectUrl}&deleteSuccess=${deletedCount}`);
+            return res.redirect(`${redirectUrl}&deleteSuccess=${deleteAll === 'true' ? 'all' : deleteIds.length}`);
+
         } catch (err) {
             console.error("ERROR DELETE MULTIPLE:", err);
             res.status(500).send("Gagal menghapus data: " + err.message);

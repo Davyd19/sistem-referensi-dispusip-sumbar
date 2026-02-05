@@ -86,15 +86,17 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Ukuran Grid Denah</label>
                             <div class="flex items-center gap-3">
                                 <div>
-                                    <span class="text-xs text-gray-500 block mb-1">Baris</span>
+                                    <span class="text-xs text-gray-500 block mb-1">Baris (maks. 60)</span>
                                     <input id="roomRows" type="number" min="4" max="60" value="25"
-                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                        title="Maksimal 60 baris">
                                 </div>
                                 <span class="text-gray-400 font-bold">×</span>
                                 <div>
-                                    <span class="text-xs text-gray-500 block mb-1">Kolom</span>
+                                    <span class="text-xs text-gray-500 block mb-1">Kolom (maks. 60)</span>
                                     <input id="roomCols" type="number" min="4" max="60" value="40"
-                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                        class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                        title="Maksimal 60 kolom">
                                 </div>
                             </div>
                         </div>
@@ -223,7 +225,7 @@
 .rd-item { display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 2px solid; font-size: 10px; font-weight: 700; text-align: center; padding: 2px 4px; cursor: grab; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
 .rd-item:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .rd-item:active { cursor: grabbing; }
-.rd-item-label { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.2; word-break: break-word; }
+.rd-item-label { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; line-height: 1.15; word-break: break-word; overflow-wrap: anywhere; font-size: clamp(6px, 1.1vmin, 11px); text-align: center; }
 .rd-item--rack { background: rgba(107, 114, 128, 0.35); border-color: #4b5563; color: #1f2937; }
 .rd-item--table-visitor { background: rgba(248, 113, 113, 0.3); border-color: #dc2626; color: #7f1d1d; }
 .rd-item--table-librarian { background: rgba(45, 212, 191, 0.3); border-color: #0d9488; color: #134e4a; }
@@ -414,6 +416,8 @@
   const ensureGridSize = async () => {
     const nr = Math.max(4, Math.min(60, Number(rowsInput.value) || 25));
     const nc = Math.max(4, Math.min(60, Number(colsInput.value) || 40));
+    rowsInput.value = String(nr);
+    colsInput.value = String(nc);
     if (nr < state.rows || nc < state.cols) {
       const wouldCut = state.items.some(it => it.r2 > nr || it.c2 > nc);
       if (wouldCut) {
