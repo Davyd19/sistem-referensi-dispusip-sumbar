@@ -1,4 +1,14 @@
+<style>
+.shelf-rack-cell .shelf-rack-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: clamp(6px, 1.2vmin, 10px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
+</style>
 <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+    <% if (typeof showHeader !== 'undefined' && showHeader) { %>
+    <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+        <h3 class="font-bold text-gray-700 flex items-center">
+            <i class="fas fa-map-marked-alt text-blue-600 mr-2"></i> Denah Ruangan
+        </h3>
+    </div>
+    <% } %>
     <div class="p-6">
         <% 
             const isPopupParam = typeof isPopup !== 'undefined' ? isPopup : false;
@@ -32,23 +42,33 @@
                 const n2 = normalizeKey(String(name).replace(/^Rak\s+/i, ''));
                 return !!s2 && !!n2 && n2 === s2;
             }
+            const hasRack = dItems.some(it => it.type === 'rack');
+            const hasTablePustakawan = dItems.some(it => it.type === 'table' && (it.role === 'librarian' || (it.name && /pustakawan|admin/i.test(it.name))));
+            const hasTablePengunjung = dItems.some(it => it.type === 'table' && !(/pustakawan|admin/i.test(it.name || '')) && !(/tamu/i.test(it.name || '')));
+            const hasTableTamu = dItems.some(it => it.type === 'table' && (it.role === 'guest' || (it.name && /tamu/i.test(it.name))));
+            const hasDoor = dItems.some(it => it.type === 'door');
         %>
         <%
+            const compactFrameParam = typeof compactFrame !== 'undefined' ? compactFrame : false;
             const mapSizeClass = hasDbLayout ? '' : (isPopupParam ? 'aspect-[2/1] max-h-[300px]' : 'aspect-[16/9] min-h-[120px]');
             const mapAspectStyle = hasDbLayout ? `aspect-ratio: ${dCols} / ${dRows};` : '';
+            const frameClass = compactFrameParam ? 'w-full min-h-[320px] max-h-[min(58vh,480px)] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full min-h-[320px] max-h-[min(65vh,500px)] max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2';
+            const frameStyle = compactFrameParam ? '' : '-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;';
         %>
-        <% if (hasDbLayout) { %><div class="max-h-[min(65vh,500px)] max-w-full overflow-auto rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center" style="-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;"><% } %>
+        <% if (hasDbLayout) { %><div id="shelf-map-frame" class="<%= frameClass %>" style="<%= frameStyle %>"><% } %>
         <div 
             id="shelf-map-container" 
             class="relative bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden <%= hasDbLayout ? 'inline-block flex-shrink-0' : mapSizeClass ? 'w-full ' + mapSizeClass : 'w-full' %>"
-            style="<%= mapAspectStyle %><%= hasDbLayout ? '; width: fit-content; max-width: 100%;' : '' %>"
+            style="<%= mapAspectStyle %><%= hasDbLayout ? '' : '' %>"
             data-input-field-id="<%= typeof inputFieldId !== 'undefined' ? inputFieldId : 'shelf_location' %>"
+            data-cols="<%= dCols %>"
+            data-rows="<%= dRows %>"
+            data-min-cell="<%= compactFrameParam ? '12' : '14' %>"
         >
             <% if (hasDbLayout) { %>
                 <div class="shelf-map-grid w-full h-full grid gap-0.5 p-1 bg-gray-100 rounded-sm overflow-hidden min-h-0" style="
-                    grid-template-columns: repeat(<%= dCols %>, minmax(0, 1fr));
-                    grid-template-rows: repeat(<%= dRows %>, minmax(0, 1fr));
-                    aspect-ratio: <%= dCols %> / <%= dRows %>;
+                    grid-template-columns: repeat(<%= dCols %>, 1fr);
+                    grid-template-rows: repeat(<%= dRows %>, 1fr);
                 ">
                     <% dItems.forEach(item => {
                         const spanR = (item.r2 || item.r1) - (item.r1 || 1) + 1;
@@ -70,10 +90,10 @@
                         const clickableClass = isRack ? 'cursor-pointer hover:brightness-105' : 'cursor-default';
                     %>
                         <div 
-                            class="flex items-center justify-center rounded-sm border-2 border-solid shadow-sm transition-colors duration-150 <%= bgClass %> <%= borderClass %> <%= textClass %> <%= clickableClass %> p-0.5 text-[8px] font-bold text-center overflow-hidden select-none"
+                            class="shelf-rack-cell flex items-center justify-center rounded-sm border-2 border-solid shadow-sm transition-colors duration-150 <%= bgClass %> <%= borderClass %> <%= textClass %> <%= clickableClass %> p-0.5 font-bold overflow-hidden select-none"
                             <% if (isRack) { %>data-rack-id="<%= rackName.replace(/"/g, '&quot;') %>"<% } %>
                             style="grid-column: <%= c1 %> / span <%= spanC %>; grid-row: <%= r1 %> / span <%= spanR %>; z-index: 10;"
-                        ><%= isRack ? rackName : '' %></div>
+                        ><span class="shelf-rack-label"><%= isRack ? rackName : '' %></span></div>
                     <% }); %>
                 </div>
             <% } else { %>
@@ -84,34 +104,33 @@
             <% } %>
         </div>
         <% if (hasDbLayout) { %></div><% } %>
-        <% if (hasDbLayout) { %><p class="text-xs text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i>Geser denah jika ukuran rows/cols melebihi tampilan.</p><% } %>
         
-        <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
-            <div class="flex items-center gap-2">
+        <% if (hasDbLayout) { %><div class="mt-6 flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-600">
+            <% if (hasRack) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-gray-300 border border-gray-400"></div> 
                 <span>Rak Buku</span>
-            </div>
-            <div class="flex items-center gap-2">
+            </div><% } %>
+            <% if (hasTablePustakawan) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-teal-400 border border-gray-400"></div> 
                 <span>Meja Pustakawan</span>
-            </div>
-            <div class="flex items-center gap-2">
+            </div><% } %>
+            <% if (hasTablePengunjung) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-red-400 border border-gray-400"></div> 
                 <span>Meja Pengunjung</span>
-            </div>
-            <div class="flex items-center gap-2">
+            </div><% } %>
+            <% if (hasTableTamu) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-green-400 border border-gray-400"></div> 
                 <span>Meja Buku Tamu</span>
-            </div>
-            <div class="flex items-center gap-2">
+            </div><% } %>
+            <% if (hasDoor) { %><div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-orange-400 border border-gray-400"></div> 
                 <span>Pintu</span>
-            </div>
+            </div><% } %>
             <div id="selected-rack-indicator" class="flex items-center gap-2 p-1 bg-blue-50 rounded border border-blue-200 min-w-[140px] <%= shelf ? '' : 'invisible' %>" aria-hidden="<%= shelf ? 'false' : 'true' %>">
                 <div class="w-4 h-4 bg-blue-600 border border-blue-800 animate-pulse"></div> 
-                <span class="text-blue-800 font-bold">Rak Terpilih: <span id="selected-rack-label">-</span></span>
+                <span class="text-blue-800 font-bold"><%= (typeof showHeader !== 'undefined' && showHeader) ? 'Lokasi Buku: ' : 'Rak Terpilih: ' %><span id="selected-rack-label"><%= shelf || '-' %></span></span>
             </div>
-        </div>
+        </div><% } %>
         
     </div>
 </div>
@@ -120,13 +139,48 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🗺️ === SHELF MAP INTERACTIVE DIINISIALISASI ===');
     
-    // Ambil inputFieldId dari data attribute container
     const mapContainer = document.getElementById('shelf-map-container');
-    console.log('📍 mapContainer:', mapContainer);
+    const shelfMapFrame = document.getElementById('shelf-map-frame');
+    const shelfMapGrid = document.querySelector('.shelf-map-grid');
     
     if (!mapContainer) {
         console.error('❌ Map container TIDAK DITEMUKAN!');
         return;
+    }
+    
+    // Ukuran grid responsif: frame referensi 25×40, scale agar muat
+    function fitGridToFrame() {
+        if (!shelfMapFrame || !shelfMapGrid) return;
+        const cols = parseInt(mapContainer.getAttribute('data-cols') || 40, 10);
+        const rows = parseInt(mapContainer.getAttribute('data-rows') || 25, 10);
+        var pw = shelfMapFrame.clientWidth - 24;
+        var ph = shelfMapFrame.clientHeight - 24;
+        if (pw <= 0 || ph <= 0) {
+            pw = Math.max(400, (window.innerWidth || 800) - 100);
+            ph = Math.max(320, Math.min(500, (window.innerHeight || 600) * 0.5));
+        }
+        const gap = 2, pad = 8;
+        const availW = pw - (cols - 1) * gap - pad;
+        const availH = ph - (rows - 1) * gap - pad;
+        const cellSize = Math.min(Math.floor(availW / cols), Math.floor(availH / rows));
+        const minCell = parseInt(mapContainer.getAttribute('data-min-cell') || '14', 10);
+        const size = Math.max(minCell, cellSize);
+        const totalW = cols * size + (cols - 1) * gap + pad;
+        const totalH = rows * size + (rows - 1) * gap + pad;
+        shelfMapGrid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + size + 'px)';
+        shelfMapGrid.style.gridTemplateRows = 'repeat(' + rows + ', ' + size + 'px)';
+        mapContainer.style.width = totalW + 'px';
+        mapContainer.style.height = totalH + 'px';
+        mapContainer.style.maxWidth = 'none';
+        mapContainer.style.maxHeight = 'none';
+    }
+    
+    if (shelfMapFrame && shelfMapGrid) {
+        fitGridToFrame();
+        requestAnimationFrame(function() { fitGridToFrame(); });
+        setTimeout(function() { fitGridToFrame(); }, 100);
+        const ro = new ResizeObserver(function() { fitGridToFrame(); });
+        ro.observe(shelfMapFrame);
     }
     
     console.log('✅ Map container ditemukan');
@@ -519,7 +573,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Juga listen untuk event custom 'popupOpened' dari parent dengan delay untuk padding responsif
     window.addEventListener('shelfMapPopupOpened', function() {
         [100, 200, 350, 500, 700, 1000, 1500].forEach(delay => {
-            setTimeout(function() { initializeHighlight(); }, delay);
+            setTimeout(function() {
+                if (typeof fitGridToFrame === 'function') fitGridToFrame();
+                initializeHighlight();
+            }, delay);
         });
     });
 

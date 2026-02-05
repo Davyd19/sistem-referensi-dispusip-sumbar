@@ -289,14 +289,9 @@
                     // === A. RESET SEMUA WARNA RAK DULU ===
                     resetAllRacksColors(racks);
 
-                    // === B. AMBIL ID RAK ===
+                    // === B. AMBIL ID RAK (simpan nama persis dari denah, tanpa tambahan "Rak") ===
                     const rackIdRaw = this.getAttribute('data-rack-id');
-                    let selectedRack = rackIdRaw;
-                    if (selectedRack && !selectedRack.toLowerCase().startsWith('rak')) {
-                        if (selectedRack.match(/^[A-H][12]$/i)) {
-                            selectedRack = "Rak " + selectedRack.toUpperCase();
-                        }
-                    }
+                    const selectedRack = (rackIdRaw || '').trim();
 
                     // === C. HIGHLIGHT RAK YANG DIKLIK (SEMENTARA) ===
                     highlightRack(this);
