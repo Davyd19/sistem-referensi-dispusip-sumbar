@@ -216,7 +216,7 @@
 
 <style>
 .rd-grid { display: grid; gap: 6px; position: relative; }
-.rd-cell { width: var(--rd-cell-size, 26px); height: var(--rd-cell-size, 26px); min-width: var(--rd-cell-size, 26px); min-height: var(--rd-cell-size, 26px); border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; box-sizing: border-box; }
+.rd-cell { width: var(--rd-cell-size, 26px); height: var(--rd-cell-size, 26px); min-width: var(--rd-cell-size, 26px); min-height: var(--rd-cell-size, 26px); border-radius: 4px; border: 1px solid #e5e7eb; background: #f9fafb; box-sizing: border-box; }
 .rd-cell:hover { outline: 2px solid rgba(99, 102, 241, 0.35); outline-offset: 0; }
 .rd-item { display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 2px solid; font-size: 10px; font-weight: 700; text-align: center; padding: 2px 4px; cursor: grab; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
 .rd-item:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
@@ -555,21 +555,23 @@
     const rows = state.rows;
     let pw = denahViewport.clientWidth - PAD * 2;
     let ph = denahViewport.clientHeight - PAD * 2;
-    if (pw <= 0 || ph <= 0) {
-      pw = Math.max(800, (window.innerWidth || 1200) - 100);
-      ph = Math.max(400, (window.innerHeight || 800) * 0.5);
+    if (pw <= 0 || ph <= 0 || pw < 400) {
+      pw = Math.max(800, (window.innerWidth || 1200) - 120);
+      ph = Math.max(450, (window.innerHeight || 800) * 0.55);
     }
     const availW = pw - (cols - 1) * GAP;
     const availH = ph - (rows - 1) * GAP;
+    const availW40 = pw - (40 - 1) * GAP;
     let cellW = cols > 0 ? availW / cols : 26;
+    let cellW40 = availW40 / 40;
     let cellH = rows > 0 ? availH / rows : 26;
     let size;
     if (cols > 40) {
-      size = Math.floor(cellH);
+      size = Math.floor(cellW40);
     } else {
       size = Math.floor(cellW);
     }
-    return Math.max(10, Math.min(32, size));
+    return Math.max(14, Math.min(32, size));
   }
 
   const render = () => {
@@ -578,6 +580,10 @@
     gridEl.style.setProperty('--rd-cell-size', cellSize + 'px');
     gridEl.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
     gridEl.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
+    if (denahViewport) {
+      denahViewport.style.overflowX = state.cols > 40 ? 'auto' : 'hidden';
+      denahViewport.style.overflowY = 'visible';
+    }
 
     const occupied = getOccupiedRects().filter(it => it.id !== movingItemId);
     const selection = (dragStart && dragEnd) ? rectNormalize(dragStart, dragEnd) : null;
@@ -836,6 +842,8 @@
   render();
   requestAnimationFrame(() => render());
   setTimeout(() => render(), 100);
+  setTimeout(() => render(), 300);
+  setTimeout(() => render(), 600);
   updateModeButtons();
 })();
 </script>
