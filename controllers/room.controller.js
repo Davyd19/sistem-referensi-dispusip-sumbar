@@ -1,5 +1,5 @@
 // controllers/room.controller.js
-const { Ruangan, User, sequelize } = require('../models');
+const { Ruangan, User, Book, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
 
 module.exports = {
@@ -14,6 +14,14 @@ module.exports = {
                 }],
                 order: [['createdAt', 'DESC']]
             });
+            const bookCounts = await Book.findAll({
+                attributes: ['id_ruangan', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+                group: ['id_ruangan'],
+                raw: true
+            });
+            const countMap = {};
+            bookCounts.forEach(r => { countMap[r.id_ruangan] = parseInt(r.count, 10) || 0; });
+            rooms.forEach(r => { r._bookCount = countMap[r.id_ruangan] || 0; });
 
             res.render('super-admin/room_list', {
                 title: 'Kelola Ruangan',
@@ -191,21 +199,39 @@ module.exports = {
         }
     },
 
-    // 6. HAPUS RUANGAN (DAN ADMINNYA)
+    // 6. HAPUS RUANGAN (BUKU DI RUANGAN, DAN ADMIN)
     delete: async (req, res) => {
         const t = await sequelize.transaction();
         try {
             const { id } = req.params;
+            const { confirm_username, confirm_password } = req.body || {};
+
+            if (!confirm_username || !confirm_password) {
+                await t.rollback();
+                return res.redirect('/admin/rooms?error_delete=Username dan password wajib diisi.');
+            }
+
+            const superAdmin = await User.findOne({
+                where: { username: confirm_username.trim(), role: 'super_admin' }
+            });
+            if (!superAdmin || !(await bcrypt.compare(confirm_password, superAdmin.password))) {
+                await t.rollback();
+                return res.redirect('/admin/rooms?error_delete=Username atau password Super Admin salah.');
+            }
+
             const room = await Ruangan.findByPk(id);
-            
             if (!room) return res.status(404).send("Data tidak ditemukan");
 
             const adminId = room.id_admin_ruangan;
+            const idRuangan = room.id_ruangan;
 
-            // Hapus Ruangan dulu (karena foreign key ada di ruangan)
+            // 1. Hapus semua buku di ruangan ini (termasuk copy & relasi via cascade/hooks)
+            await Book.destroy({ where: { id_ruangan: idRuangan }, transaction: t });
+
+            // 2. Hapus Ruangan
             await room.destroy({ transaction: t });
 
-            // Hapus User Adminnya juga (Opsional, tapi disarankan agar tidak ada user sampah)
+            // 3. Hapus User Admin ruangan
             if (adminId) {
                 await User.destroy({ where: { id: adminId }, transaction: t });
             }
@@ -216,7 +242,7 @@ module.exports = {
         } catch (err) {
             await t.rollback();
             console.error(err);
-            res.status(500).send("Gagal menghapus data");
+            res.redirect('/admin/rooms?error_delete=Gagal menghapus data.');
         }
     }
 };

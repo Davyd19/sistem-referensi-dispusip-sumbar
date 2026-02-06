@@ -70,7 +70,7 @@ router.get("/rooms/add", verifySuperAdmin, roomController.showAdd);
 router.post("/rooms/add", verifySuperAdmin, roomController.store);
 router.get("/rooms/edit/:id", verifySuperAdmin, roomController.showEdit);
 router.post("/rooms/edit/:id", verifySuperAdmin, roomController.update);
-router.get("/rooms/delete/:id", verifySuperAdmin, roomController.delete);
+router.post("/rooms/delete/:id", verifySuperAdmin, roomController.delete);
 
 // Dashboard Admin Biasa
 router.get("/dashboard", adminBookController.getDashboard);

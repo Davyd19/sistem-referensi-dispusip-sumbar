@@ -165,7 +165,7 @@
             </div>
             
             <div class="flex-1 min-h-0 overflow-auto p-4 bg-gray-100 flex items-center justify-center relative cursor-move" id="map-scroll-container">
-                <div id="map-transform-wrapper" class="min-w-0 w-full h-full flex items-center justify-center transform scale-100 origin-center transition-transform duration-200">
+                <div id="map-transform-wrapper" class="min-w-0 w-full h-full flex items-center justify-center transform scale-100 origin-center" style="will-change: transform;">
                     <div class="h-full w-full max-w-full flex flex-col min-h-0">
                         <%- include('partials/shelfMapInteractive', { inputFieldId: null, isPopup: false, layoutJson: typeof layoutJson !== 'undefined' ? layoutJson : null, shelfLocation: query.shelf || '', fillHeight: true }) %>
                     </div>
@@ -195,18 +195,21 @@
     const countBadge = document.getElementById('selected-count-badge');
     let isSelectAllDatabase = false;
 
-    // === ZOOM LOGIC ===
+    // === ZOOM & PAN LOGIC ===
     let currentScale = 1.0;
+    let panX = 0, panY = 0;
+    let isDragging = false;
+    let pointerDown = false;
+    let dragStartX = 0, dragStartY = 0, dragStartPanX = 0, dragStartPanY = 0;
+    window.mapWasDragging = false; // untuk mencegah klik rak saat selesai drag
     const mapWrapper = document.getElementById('map-transform-wrapper');
     const mapScrollContainer = document.getElementById('map-scroll-container');
     
     window.addEventListener('load', () => {
         if (mapScrollContainer && mapWrapper) {
-            // Center map
-            mapScrollContainer.scrollLeft = (mapScrollContainer.scrollWidth - mapScrollContainer.clientWidth) / 2;
-            mapScrollContainer.scrollTop = (mapScrollContainer.scrollHeight - mapScrollContainer.clientHeight) / 2;
+            mapScrollContainer.scrollLeft = 0;
+            mapScrollContainer.scrollTop = 0;
         }
-        // Auto zoom-out sedikit di mobile
         if (window.innerWidth < 1024) {
             currentScale = 0.7; 
             updateZoom();
@@ -222,13 +225,55 @@
 
     function resetZoom() {
         currentScale = 1.0;
+        panX = 0;
+        panY = 0;
         updateZoom();
     }
 
     function updateZoom() {
-        if(mapWrapper) {
-            mapWrapper.style.transform = `scale(${currentScale})`;
+        if (mapWrapper) {
+            mapWrapper.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${currentScale})`;
         }
+    }
+
+    // === DRAG-TO-PAN ===
+    if (mapScrollContainer) {
+        mapScrollContainer.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return; // hanya tombol kiri
+            isDragging = false;
+            pointerDown = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            dragStartPanX = panX;
+            dragStartPanY = panY;
+            mapScrollContainer.style.cursor = 'grabbing';
+            mapScrollContainer.style.userSelect = 'none';
+        });
+        mapScrollContainer.addEventListener('mousemove', function(e) {
+            if (!pointerDown) return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                isDragging = true;
+                window.mapWasDragging = true;
+                panX = dragStartPanX + dx;
+                panY = dragStartPanY + dy;
+                updateZoom();
+            }
+        });
+        function endDrag() {
+            pointerDown = false;
+            mapScrollContainer.style.cursor = 'move';
+            mapScrollContainer.style.userSelect = '';
+            if (isDragging) {
+                setTimeout(function() { window.mapWasDragging = false; }, 10);
+            }
+        }
+        mapScrollContainer.addEventListener('mouseup', endDrag);
+        mapScrollContainer.addEventListener('mouseleave', endDrag);
+        document.addEventListener('mouseup', function(e) {
+            if (pointerDown && !mapScrollContainer.contains(e.target)) endDrag();
+        });
     }
 
     // === 1. LOGIKA SELEKSI ===
@@ -287,6 +332,7 @@
                 rack.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (window.mapWasDragging) return; // abaikan jika baru selesai drag
 
                     // === A. RESET SEMUA WARNA RAK DULU ===
                     resetAllRacksColors(racks);

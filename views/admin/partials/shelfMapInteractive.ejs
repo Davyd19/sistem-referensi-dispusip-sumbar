@@ -1,8 +1,8 @@
 <style>
-.shelf-rack-cell .shelf-rack-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: calc(var(--shelf-cell-px, 18) * 0.8px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
+.shelf-rack-cell .shelf-rack-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; max-width: 100%; font-size: calc(var(--shelf-cell-px, 18) * 0.62px); line-height: 1.2; text-align: center; word-break: normal; overflow-wrap: break-word; white-space: normal; overflow: hidden; }
 </style>
 <% const useFillHeight = typeof fillHeight !== 'undefined' ? fillHeight : false; %>
-<div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm <%= useFillHeight ? 'h-full min-h-0 flex flex-col' : '' %>">
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm w-full <%= useFillHeight ? 'h-full min-h-0 flex flex-col' : '' %>">
     <% if (typeof showHeader !== 'undefined' && showHeader) { %>
     <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center flex-shrink-0">
         <h3 class="font-bold text-gray-700 flex items-center">
@@ -53,10 +53,15 @@
             const compactFrameParam = typeof compactFrame !== 'undefined' ? compactFrame : false;
             const mapSizeClass = hasDbLayout ? '' : (isPopupParam ? 'aspect-[2/1] max-h-[300px]' : 'aspect-[16/9] min-h-[120px]');
             const mapAspectStyle = hasDbLayout ? `aspect-ratio: ${dCols} / ${dRows};` : '';
-            const frameClass = useFillHeight ? 'w-full flex-1 min-h-[200px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : (compactFrameParam ? 'w-full h-[min(58vh,420px)] min-h-[280px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full h-[min(75vh,560px)] min-h-[320px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2');
+            // UNIFIED: Semua ruangan (Tandon, Deposit, Referensi, dll) pakai logika sama: aspect-ratio dari cols/rows
+            // sehingga denah mengisi frame penuh tanpa ruang kosong, berlaku juga untuk ruangan baru.
+            const frameClassDbLayout = compactFrameParam ? 'w-full max-h-[min(58vh,420px)] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full max-h-[min(75vh,560px)] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2';
+            const frameClass = useFillHeight ? 'w-full flex-1 min-h-[200px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : (hasDbLayout ? frameClassDbLayout : (compactFrameParam ? 'w-full h-[min(58vh,420px)] min-h-[280px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2' : 'w-full h-[min(75vh,560px)] min-h-[320px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50 min-w-0 flex justify-center items-center p-2'));
             const frameStyle = compactFrameParam ? '' : '-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;';
+            // aspect-ratio hanya untuk popup/modal (bukan fillHeight) agar denah mengisi frame tanpa ruang kosong
+            const frameStyleWithAspect = (hasDbLayout && !useFillHeight) ? (frameStyle + ' aspect-ratio: ' + dCols + ' / ' + dRows + ';') : frameStyle;
         %>
-        <% if (hasDbLayout) { %><div id="shelf-map-frame" class="<%= frameClass %>" style="<%= frameStyle %>"><div id="shelf-map-scaled-wrap" class="flex-shrink-0 overflow-hidden"><% } %>
+        <% if (hasDbLayout) { %><div id="shelf-map-frame" class="<%= frameClass %>" style="<%= frameStyleWithAspect %>"><div id="shelf-map-scaled-wrap" class="flex-shrink-0 overflow-hidden"><% } %>
         <div 
             id="shelf-map-container" 
             class="relative bg-white border border-gray-300 shadow-sm rounded-lg overflow-hidden <%= hasDbLayout ? 'inline-block' : mapSizeClass ? 'w-full ' + mapSizeClass : 'w-full' %>"
