@@ -26,16 +26,16 @@ exports.getAllSubjects = async (req, res) => {
                     ${idRuangan ? `AND b.id_ruangan = ${idRuangan}` : ''}
                 )`), 'total_books']
             ],
+            // Pastikan q diproses dengan benar
             where: q ? { name: { [Op.like]: `%${q}%` } } : {},
             order: [['name', 'ASC']]
         });
 
         res.render('admin/subject', {
             title: 'Daftar Subjek',
-            // Mengirimkan namaRuangan agar muncul di header
             namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : 'Semua Ruangan',
             subjects,
-            q,
+            q, // Kirim q agar input search di view tidak reset
             active: 'subject'
         });
     } catch (err) {
@@ -84,21 +84,22 @@ exports.updateSubject = async (req, res) => {
 exports.deleteSubject = async (req, res) => {
     try {
         const { id } = req.params;
-        const { BookSubject } = require('../models');
 
-        // Proteksi: Cek apakah subjek masih digunakan oleh buku manapun
-        const count = await BookSubject.count({ where: { subject_id: id } });
-        if (count > 0) {
-            return res.status(400).send('Gagal: Subjek masih digunakan oleh beberapa buku.');
-        }
-
+        // Cari subjeknya
         const subject = await Subject.findByPk(id);
         if (!subject) return res.status(404).send('Subjek tidak ditemukan');
 
+        /**
+         * Karena di migrasi sudah ada onDelete: 'CASCADE', 
+         * kita tidak perlu menghapus manual di BookSubject.
+         * Cukup hapus Subject-nya, maka record di junction table (BookSubjects)
+         * akan otomatis ikut terhapus oleh Database.
+         */
         await subject.destroy();
+
         res.redirect('/admin/subjects');
     } catch (err) {
-        console.error(err);
+        console.error("DELETE SUBJECT ERROR:", err);
         res.status(500).send('Gagal menghapus subjek');
     }
 };

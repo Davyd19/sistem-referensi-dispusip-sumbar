@@ -1,19 +1,22 @@
 const { Author, Ruangan, Book, Sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 module.exports = {
   // Menampilkan halaman list penulis
   index: async (req, res) => {
     try {
+      // 1. Ambil query 'q' dari URL (pencarian)
+      const q = req.query.q || '';
       const adminId = req.user.id;
       
-      // 1. Ambil data ruangan berdasarkan admin yang login
+      // 2. Ambil data ruangan berdasarkan admin yang login
       const ruanganAdmin = await Ruangan.findOne({ 
         where: { id_admin_ruangan: adminId } 
       });
 
       const idRuangan = ruanganAdmin ? ruanganAdmin.id_ruangan : null;
 
-      // 2. Ambil semua penulis dengan hitungan buku di ruangan tersebut
+      // 3. Ambil penulis dengan filter pencarian dan hitungan buku
       const authors = await Author.findAll({
         attributes: [
           'id', 
@@ -26,14 +29,18 @@ module.exports = {
             ${idRuangan ? `AND b.id_ruangan = ${idRuangan}` : ''}
           )`), 'total_books']
         ],
+        // 🔑 Tambahkan logika WHERE untuk search
+        where: q ? {
+          name: { [Op.like]: `%${q}%` }
+        } : {},
         order: [['name', 'ASC']]
       });
 
       res.render('admin/author', {
         title: 'Kelola Penulis',
-        // Mengirimkan namaRuangan ke header
         namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : 'Semua Ruangan',
         authors,
+        q, // 🔑 Kirim variabel q agar bisa ditampilkan di input search EJS
         user: req.user,
         active: 'authors'
       });
@@ -79,22 +86,24 @@ module.exports = {
   },
 
   // Menghapus penulis
+  // Menghapus penulis
   destroy: async (req, res) => {
     try {
       const { id } = req.params;
       
-      // Proteksi: Jangan hapus jika penulis masih punya buku (Global)
-      const { BookAuthor } = require('../models');
-      const count = await BookAuthor.count({ where: { author_id: id } });
+      /** * Hapus bagian pengecekan BookAuthor.count.
+       * Karena di migrasi sudah ada onDelete: 'CASCADE', 
+       * menghapus Author akan otomatis menghapus baris terkait di BookAuthors.
+       */
+      const result = await Author.destroy({ where: { id } });
       
-      if (count > 0) {
-        return res.status(400).send('Gagal: Penulis masih terikat dengan data buku.');
+      if (result === 0) {
+        return res.status(404).send('Penulis tidak ditemukan');
       }
 
-      await Author.destroy({ where: { id } });
       res.redirect('/admin/authors');
     } catch (error) {
-      console.error(error);
+      console.error("DELETE AUTHOR ERROR:", error);
       res.status(500).send('Gagal menghapus penulis');
     }
   }

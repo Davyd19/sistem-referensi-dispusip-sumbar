@@ -20,9 +20,16 @@
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm"
                 >
             </div>
+            
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold transition shadow-sm">
                 Cari
             </button>
+
+            <% if (typeof q !== 'undefined' && q !== '') { %>
+                <a href="/admin/categories" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-lg font-bold transition flex items-center shadow-sm" title="Reset">
+                    <i class="fas fa-undo"></i>
+                </a>
+            <% } %>
         </form>
 
         <button 

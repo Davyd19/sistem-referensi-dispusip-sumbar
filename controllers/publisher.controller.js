@@ -1,19 +1,22 @@
 const { Publisher, Ruangan, Book, Sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 module.exports = {
   // Menampilkan halaman list penerbit
   index: async (req, res) => {
     try {
+      // 1. Ambil query 'q' dari URL untuk fitur search
+      const q = req.query.q || '';
       const adminId = req.user.id;
       
-      // 1. Ambil data ruangan berdasarkan admin yang login
+      // 2. Ambil data ruangan berdasarkan admin yang login
       const ruanganAdmin = await Ruangan.findOne({ 
         where: { id_admin_ruangan: adminId } 
       });
 
       const idRuangan = ruanganAdmin ? ruanganAdmin.id_ruangan : null;
 
-      // 2. Ambil semua penerbit global dengan hitungan buku di ruangan tersebut
+      // 3. Ambil semua penerbit dengan filter pencarian dan hitungan buku
       const publishers = await Publisher.findAll({
         attributes: [
           'id', 
@@ -26,14 +29,18 @@ module.exports = {
             ${idRuangan ? `AND b.id_ruangan = ${idRuangan}` : ''}
           )`), 'total_books']
         ],
+        // 🔑 Tambahkan kondisi WHERE agar fitur search berfungsi
+        where: q ? {
+          name: { [Op.like]: `%${q}%` }
+        } : {},
         order: [['name', 'ASC']]
       });
 
       res.render('admin/publisher', {
         title: 'Kelola Penerbit',
-        // Mengirimkan namaRuangan agar muncul di header.ejs
         namaRuangan: ruanganAdmin ? ruanganAdmin.nama_ruangan : 'Semua Ruangan',
         publishers,
+        q, // 🔑 Kirim q ke view agar input text search tidak hilang setelah reload
         user: req.user,
         active: 'publishers'
       });
@@ -83,18 +90,21 @@ module.exports = {
     try {
       const { id } = req.params;
       
-      // Cek relasi di tabel junction (BookPublishers)
-      const { BookPublisher } = require('../models');
-      const count = await BookPublisher.count({ where: { publisher_id: id } });
+      /**
+       * Hapus pengecekan count.
+       * Karena di migrasi BookPublishers sudah diset onDelete: 'CASCADE' 
+       * pada publisher_id, maka menghapus Publisher akan otomatis 
+       * menghapus baris terkait di tabel BookPublishers tanpa menghapus bukunya.
+       */
+      const result = await Publisher.destroy({ where: { id } });
 
-      if (count > 0) {
-        return res.status(400).send('Gagal: Penerbit masih digunakan oleh data buku.');
+      if (result === 0) {
+        return res.status(404).send('Penerbit tidak ditemukan');
       }
 
-      await Publisher.destroy({ where: { id } });
       res.redirect('/admin/publishers');
     } catch (error) {
-      console.error(error);
+      console.error("DELETE PUBLISHER ERROR:", error);
       res.status(500).send('Gagal menghapus penerbit');
     }
   }
