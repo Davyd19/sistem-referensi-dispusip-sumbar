@@ -21,7 +21,7 @@ const toTitleCase = (str) => {
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
-// [BARU] Helper Format Tanggal Indonesia (DD/MM/YYYY)
+// Helper Format Tanggal Indonesia (DD/MM/YYYY)
 const formatDateID = (date) => {
     if (!date) return '-';
     const d = new Date(date);
@@ -31,31 +31,49 @@ const formatDateID = (date) => {
     return `${day}/${month}/${year}`;
 };
 
-const standardizeShelfLocation = (rawLocation) => {
-    if (rawLocation == null) return null;
-    let loc = String(rawLocation).replace(/['"]+/g, '').trim();
-    if (!loc || loc === '-') return null;
-    return loc;
-};
-
 module.exports = {
     // ==========================================
     // 1. DASHBOARD LOGISTIK (Tabel Utama)
     // ==========================================
     index: async (req, res) => {
         try {
+            // Cari ruangan yang SUDAH ADA sesuai seeder ('Ruangan Pustaka Keliling')
+            let puskelRoom = await Ruangan.findOne({ 
+                where: { nama_ruangan: { [Op.like]: '%Pustaka Keliling%' } } 
+            });
+
+            // Fallback: Jika tidak ketemu, baru buat
+            if (!puskelRoom) {
+                const adminId = req.session && req.session.user ? req.session.user.id : 1;
+                puskelRoom = await Ruangan.create({ 
+                    nama_ruangan: 'Ruangan Pustaka Keliling', 
+                    description: 'Ruangan Mobil Keliling',
+                    id_admin_ruangan: adminId
+                });
+            }
+            
+            const puskelRoomId = puskelRoom.id_ruangan;
+
             const { search, sort } = req.query;
 
+            // Setup Sorting
             let orderQuery = [['updatedAt', 'DESC']]; 
             if (sort === 'title_asc') orderQuery = [[{ model: Book }, 'title', 'ASC']];
             if (sort === 'title_desc') orderQuery = [[{ model: Book }, 'title', 'DESC']];
             if (sort === 'oldest') orderQuery = [['updatedAt', 'ASC']];
 
+            // Setup Filter
             let bookWhere = {};
+            
+            if (puskelRoomId) {
+                bookWhere.id_ruangan = puskelRoomId;
+            }
+
             if (search) {
                 bookWhere = {
+                    ...bookWhere,
                     [Op.or]: [
-                        { title: { [Op.iLike]: `%${search}%` } },
+                        { title: { [Op.like]: `%${search}%` } },
                         { isbn: { [Op.like]: `%${search}%` } }
                     ]
                 };
@@ -90,11 +108,13 @@ module.exports = {
                 copies, 
                 title: 'Logistik Pustaka Keliling',
                 active: 'logistik',
-                query: req.query 
+                query: req.query,
+                user: req.session.user,
+                namaRuangan: req.session.user.nama_ruangan
             });
         } catch (error) {
-            console.error(error);
-            res.status(500).send(error.message);
+            console.error("Error index puskel:", error);
+            res.status(500).send("Terjadi kesalahan: " + error.message);
         }
     },
 
@@ -133,7 +153,9 @@ module.exports = {
             res.render('admin/puskel/borrowers', {
                 institutions: activeData, 
                 title: 'Data Lembaga Peminjam',
-                active: 'borrowers'
+                active: 'borrowers',
+                user: req.session.user,
+                namaRuangan: req.session.user.nama_ruangan
             });
         } catch (error) {
             console.error("Error listBorrowers:", error); 
@@ -160,9 +182,6 @@ module.exports = {
         }
     },
 
-    // ==========================================
-    // DETAIL LEMBAGA
-    // ==========================================
     detailInstitution: async (req, res) => {
         try {
             const { id } = req.params;
@@ -185,7 +204,9 @@ module.exports = {
             res.render('admin/puskel/detail_institution', {
                 institution,
                 title: 'Detail Peminjaman Lembaga',
-                active: 'borrowers'
+                active: 'borrowers',
+                user: req.session.user,
+                namaRuangan: req.session.user.nama_ruangan
             });
         } catch (error) {
             console.error(error);
@@ -203,10 +224,16 @@ module.exports = {
             const institution = await Institution.findByPk(institution_id);
             if (!institution) return res.status(404).send("Lembaga tidak ditemukan");
 
+            const puskelRoom = await Ruangan.findOne({ 
+                where: { nama_ruangan: { [Op.like]: '%Pustaka Keliling%' } } 
+            });
+            const puskelRoomId = puskelRoom ? puskelRoom.id_ruangan : 0;
+
             const availableBooks = await BookCopy.findAll({
                 where: { status: 'tersedia_puskel' },
                 include: [{ 
                     model: Book, 
+                    where: { id_ruangan: puskelRoomId }, 
                     attributes: ['title', 'isbn', 'call_number', 'publish_year'],
                     include: [{ model: Author, as: 'Authors' }] 
                 }],
@@ -217,7 +244,9 @@ module.exports = {
                 institution,
                 availableBooks,
                 title: 'Pilih Buku Pinjaman',
-                active: 'borrowers'
+                active: 'borrowers',
+                user: req.session.user,
+                namaRuangan: req.session.user.nama_ruangan
             });
         } catch (error) {
             console.error(error);
@@ -283,11 +312,26 @@ module.exports = {
         } catch (error) { res.status(500).send(error.message); }
     },
 
+    // ==========================================
     // INPUT BUKU MANUAL
+    // ==========================================
     addStock: async (req, res) => {
         try {
             let { title, author, no_induk, call_number, quantity } = req.body;
             if (!title || !no_induk) return res.send('<script>alert("Judul & No Induk wajib!");history.back();</script>');
+
+            let puskelRoom = await Ruangan.findOne({ 
+                where: { nama_ruangan: { [Op.like]: '%Pustaka Keliling%' } } 
+            });
+            
+            if (!puskelRoom) {
+                const adminId = req.session && req.session.user ? req.session.user.id : 1;
+                puskelRoom = await Ruangan.create({ 
+                    nama_ruangan: 'Ruangan Pustaka Keliling',
+                    description: 'Ruangan Mobil Keliling',
+                    id_admin_ruangan: adminId 
+                });
+            }
 
             quantity = parseInt(quantity) || 1;
             let authorId = null;
@@ -297,11 +341,14 @@ module.exports = {
             }
 
             const [book] = await Book.findOrCreate({
-                where: { title: title.trim() },
+                where: { 
+                    title: title.trim(),
+                    id_ruangan: puskelRoom.id_ruangan
+                },
                 defaults: {
                     title: toTitleCase(title),
                     call_number: call_number || '-',
-                    id_ruangan: 1 
+                    id_ruangan: puskelRoom.id_ruangan
                 }
             });
 
@@ -339,30 +386,164 @@ module.exports = {
         }
     },
 
-    removeStock: async (req, res) => {
+    // ==========================================
+    // UPDATE STOK (EDIT DATA LENGKAP)
+    // ==========================================
+    updateStock: async (req, res) => {
         try {
             const { id } = req.params;
+            const { no_induk, call_number, title, author } = req.body;
+
+            // 1. Cari data copy berdasarkan ID
             const copy = await BookCopy.findByPk(id);
-            if (copy.status === 'dipinjam_puskel') return res.send('<script>alert("Buku sedang dipinjam!");history.back();</script>');
-            
-            copy.status = 'tersedia';
-            await copy.save();
-            res.redirect('/admin/puskel');
-        } catch (error) { res.status(500).send(error.message); }
+            if (!copy) return res.status(404).send("Data buku tidak ditemukan");
+
+            // 2. Validasi & Update No. Induk (BookCopy)
+            if (no_induk && no_induk !== copy.no_induk) {
+                const existingCopy = await BookCopy.findOne({ where: { no_induk } });
+                if (existingCopy) {
+                    return res.send('<script>alert("Gagal: No. Induk sudah digunakan buku lain!");history.back();</script>');
+                }
+                copy.no_induk = no_induk;
+                await copy.save();
+            }
+
+            // 3. Update Master Book (Judul & Call Number)
+            const book = await Book.findByPk(copy.book_id);
+            if (book) {
+                // Update Judul & No Panggil
+                if (title) book.title = toTitleCase(title);
+                if (call_number) book.call_number = call_number;
+                await book.save();
+
+                // 4. Update Pengarang (Relasi Many-to-Many)
+                if (author) {
+                    // Cari atau buat author baru
+                    const [authObj] = await Author.findOrCreate({ 
+                        where: { name: author.trim() } 
+                    });
+                    
+                    // Ganti relasi author buku ini dengan author yang baru/diedit
+                    // setAuthors akan menghapus relasi lama dan memasang yang baru
+                    await book.setAuthors([authObj]);
+                }
+            }
+
+            res.redirect('/admin/puskel?msg=updated');
+
+        } catch (error) {
+            console.error("Error updateStock:", error);
+            res.status(500).send("Gagal mengupdate data: " + error.message);
+        }
     },
 
     // ==========================================
-    // CRUD MASTER BUKU
+    // HAPUS STOK
     // ==========================================
-    showAddPage: async (req, res) => { res.send("Fitur Add Manual"); },
-    addBook: async (req, res) => { res.send("Fitur Add Book"); },
-    showEditPage: async (req, res) => { res.send("Fitur Edit Page"); },
-    updateBook: async (req, res) => { res.send("Fitur Update Book"); },
-    deleteMultiple: async (req, res) => { res.send("Fitur Delete"); },
+    removeStock: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            const copy = await BookCopy.findByPk(id);
+            if (!copy) return res.status(404).send("Data tidak ditemukan");
 
-    // ============================================================
-    // 5. IMPORT / EXPORT EXCEL
-    // ============================================================
+            if (copy.status === 'dipinjam_puskel') {
+                return res.send('<script>alert("Gagal: Buku sedang dipinjam oleh lembaga!");history.back();</script>');
+            }
+            
+            const bookId = copy.book_id;
+
+            await copy.destroy();
+
+            const remainingCopies = await BookCopy.count({ 
+                where: { book_id: bookId } 
+            });
+
+            if (remainingCopies === 0) {
+                const book = await Book.findByPk(bookId);
+                if (book) {
+                    const imageFilename = book.image;
+                    await book.destroy();
+                    await cleanupUnusedImage(imageFilename);
+                }
+            }
+
+            res.redirect('/admin/puskel');
+
+        } catch (error) { 
+            console.error("Error removeStock:", error);
+            res.status(500).send("Gagal menghapus data: " + error.message); 
+        }
+    },
+
+    // ==========================================
+    // IMPORT EXCEL
+    // ==========================================
+    importExcel: async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).send('File tidak ditemukan');
+            
+            // [PERBAIKAN] Cari 'Ruangan Pustaka Keliling'
+            let puskelRoom = await Ruangan.findOne({ 
+                where: { nama_ruangan: { [Op.like]: '%Pustaka Keliling%' } } 
+            });
+            if (!puskelRoom) {
+                const adminId = req.session && req.session.user ? req.session.user.id : 1;
+                puskelRoom = await Ruangan.create({ 
+                    nama_ruangan: 'Ruangan Pustaka Keliling', 
+                    description: 'Ruangan Mobil Keliling',
+                    id_admin_ruangan: adminId 
+                });
+            }
+
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(req.file.buffer);
+            const worksheet = workbook.getWorksheet(1);
+            let countSuccess = 0;
+            
+            for (let i = 2; i <= worksheet.rowCount; i++) {
+                const row = worksheet.getRow(i);
+                const title = row.getCell(2).text ? row.getCell(2).text.trim() : null;        
+                const authorName = row.getCell(3).text ? row.getCell(3).text.trim() : null;   
+                const noInduk = row.getCell(4).text ? row.getCell(4).text.trim() : null;      
+                const callNumber = row.getCell(5).text ? row.getCell(5).text.trim() : null;   
+                
+                if (!noInduk || !title) continue; 
+                
+                const [book] = await Book.findOrCreate({
+                    where: { 
+                        title: title, 
+                        id_ruangan: puskelRoom.id_ruangan 
+                    }, 
+                    defaults: { 
+                        title: toTitleCase(title), 
+                        call_number: callNumber, 
+                        id_ruangan: puskelRoom.id_ruangan 
+                    }
+                });
+
+                if (authorName) {
+                    const [author] = await Author.findOrCreate({ where: { name: authorName } });
+                    const hasAuthor = await book.hasAuthor(author);
+                    if (!hasAuthor) await book.addAuthor(author, { through: { role: 'penulis' } });
+                }
+
+                const existingCopy = await BookCopy.findOne({ where: { no_induk: noInduk } });
+                if (existingCopy) {
+                    existingCopy.status = 'tersedia_puskel';
+                    await existingCopy.save();
+                } else {
+                    await BookCopy.create({ book_id: book.id, no_induk: noInduk, status: 'tersedia_puskel', condition: 'baik' });
+                }
+                countSuccess++;
+            }
+            res.redirect('/admin/puskel?msg=success');
+        } catch (error) { res.status(500).send('Gagal import: ' + error.message); }
+    },
+
+    // ==========================================
+    // EXPORT
+    // ==========================================
     downloadTemplate: async (req, res) => {
         try {
             const workbook = new ExcelJS.Workbook();
@@ -416,42 +597,6 @@ module.exports = {
             await workbook.xlsx.write(res);
             res.end();
         } catch (error) { res.status(500).send('Gagal export data'); }
-    },
-
-    importExcel: async (req, res) => {
-        try {
-            if (!req.file) return res.status(400).send('File tidak ditemukan');
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(req.file.buffer);
-            const worksheet = workbook.getWorksheet(1);
-            let countSuccess = 0;
-            for (let i = 2; i <= worksheet.rowCount; i++) {
-                const row = worksheet.getRow(i);
-                const title = row.getCell(2).text;        
-                const authorName = row.getCell(3).text;   
-                const noInduk = row.getCell(4).text;      
-                const callNumber = row.getCell(5).text;   
-                if (!noInduk || !title) continue; 
-                const [book] = await Book.findOrCreate({
-                    where: { title: title }, 
-                    defaults: { title: toTitleCase(title), call_number: callNumber, id_ruangan: 1 }
-                });
-                if (authorName) {
-                    const [author] = await Author.findOrCreate({ where: { name: authorName } });
-                    const hasAuthor = await book.hasAuthor(author);
-                    if (!hasAuthor) await book.addAuthor(author, { through: { role: 'penulis' } });
-                }
-                const existingCopy = await BookCopy.findOne({ where: { no_induk: noInduk } });
-                if (existingCopy) {
-                    existingCopy.status = 'tersedia_puskel';
-                    await existingCopy.save();
-                } else {
-                    await BookCopy.create({ book_id: book.id, no_induk: noInduk, status: 'tersedia_puskel', condition: 'baik' });
-                }
-                countSuccess++;
-            }
-            res.redirect('/admin/puskel?msg=success');
-        } catch (error) { res.status(500).send('Gagal import: ' + error.message); }
     },
 
     exportLoanByInstitution: async (req, res) => {
@@ -573,7 +718,7 @@ module.exports = {
     },
 
     // ==========================================
-    // 6. RIWAYAT PEMINJAMAN (HISTORY) - FIXED
+    // 6. RIWAYAT PEMINJAMAN (HISTORY)
     // ==========================================
     historyBorrowers: async (req, res) => {
         try {
@@ -582,7 +727,7 @@ module.exports = {
             let institutionWhere = {};
             if (search) {
                 institutionWhere = {
-                    name: { [Op.iLike]: `%${search}%` } 
+                    name: { [Op.like]: `%${search}%` } 
                 };
             }
 
@@ -622,7 +767,6 @@ module.exports = {
                         contact: inst.contact_person,
                         phone: inst.phone,
                         total_books: returnedLoans.length, 
-                        // [PERBAIKAN] Gunakan helper formatDateID di sini
                         loan_date: lastTransaction ? formatDateID(lastTransaction.loan_date) : null,
                         return_date: lastTransaction ? formatDateID(lastTransaction.return_date) : null
                     };
@@ -634,11 +778,20 @@ module.exports = {
                 historyData,
                 title: 'Riwayat Peminjaman',
                 active: 'puskel_history',
-                query: req.query 
+                query: req.query,
+                user: req.session.user,
+                namaRuangan: req.session.user.nama_ruangan
             });
         } catch (error) {
             console.error("Error history:", error); 
             res.status(500).send("Gagal memuat riwayat: " + error.message);
         }
-    }
+    },
+
+    // Placeholder untuk CRUD buku standar agar tidak error jika dipanggil
+    showAddPage: async (req, res) => { res.send("Fitur Add Manual"); },
+    addBook: async (req, res) => { res.send("Fitur Add Book"); },
+    showEditPage: async (req, res) => { res.send("Fitur Edit Page"); },
+    updateBook: async (req, res) => { res.send("Fitur Update Book"); },
+    deleteMultiple: async (req, res) => { res.send("Fitur Delete"); },
 };

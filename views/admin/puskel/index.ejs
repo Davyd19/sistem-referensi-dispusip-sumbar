@@ -28,7 +28,6 @@
     </div>
 
     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center">
-        
         <div class="relative w-full md:w-96">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-search text-gray-400"></i>
@@ -61,16 +60,19 @@
                         <th class="px-6 py-3 text-center">No. Panggil</th>
                         <th class="px-6 py-3 text-center">Jumlah</th>
                         <th class="px-6 py-3 text-center">Status / Lokasi</th>
-                        <th class="px-6 py-3 text-center">Aksi</th>
+                        <th class="px-6 py-3 text-center">Edit</th> <th class="px-6 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="booksTableBody">
                     <% if (copies.length > 0) { %>
                         <% copies.forEach((copy, index) => { %>
+                        
+                        <% const authorName = (copy.Book && copy.Book.Authors) ? copy.Book.Authors.map(a => a.name).join(', ') : 'Tanpa Pengarang'; %>
+                        
                         <tr class="bg-white border-b hover:bg-gray-50 transition-colors book-row"
                             data-index="<%= index %>"
                             data-title="<%= copy.Book ? copy.Book.title.toLowerCase() : '' %>"
-                            data-author="<%= (copy.Book && copy.Book.Authors) ? copy.Book.Authors.map(a => a.name.toLowerCase()).join(' ') : '' %>"
+                            data-author="<%= authorName.toLowerCase() %>"
                             data-noinduk="<%= copy.no_induk.toLowerCase() %>"
                             data-callnumber="<%= copy.Book ? copy.Book.call_number : '' %>">
                             
@@ -78,7 +80,7 @@
                             <td class="px-6 py-4">
                                 <div class="font-bold text-gray-800 text-base"><%= copy.Book ? copy.Book.title : 'Judul Error' %></div>
                                 <div class="text-xs text-gray-500 mt-0.5 font-medium">
-                                    <%= (copy.Book && copy.Book.Authors && copy.Book.Authors.length > 0) ? copy.Book.Authors.map(a => a.name).join(', ') : 'Tanpa Pengarang' %>
+                                    <%= authorName %>
                                     • <%= copy.Book ? copy.Book.publish_year : '-' %>
                                 </div>
                             </td>
@@ -109,11 +111,29 @@
                                     </div>
                                 <% } %>
                             </td>
+                            
+                            <td class="px-6 py-4 text-center">
+                                <% if (copy.status === 'tersedia_puskel') { %>
+                                    <button onclick="openEditModal(
+                                                '<%= copy.id %>', 
+                                                '<%= copy.Book ? copy.Book.title.replace(/'/g, "\\'") : '' %>', 
+                                                '<%= copy.no_induk %>', 
+                                                '<%= copy.Book ? copy.Book.call_number : '' %>',
+                                                '<%= authorName.replace(/'/g, "\\'") %>'
+                                            )" 
+                                            class="text-blue-500 hover:text-blue-700 text-xs font-semibold border border-blue-200 bg-blue-50 px-2 py-1 rounded transition-colors flex items-center gap-1 mx-auto hover:bg-blue-100">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                <% } else { %>
+                                    <span class="text-gray-300 text-xs">-</span>
+                                <% } %>
+                            </td>
+
                             <td class="px-6 py-4 text-center">
                                 <% if (copy.status === 'tersedia_puskel') { %>
                                     <button onclick="confirmReturnStock('<%= copy.id %>', '<%= copy.Book ? copy.Book.title : 'Buku' %>')" 
-                                        class="text-red-500 hover:text-red-700 text-xs font-semibold border border-red-200 bg-red-50 px-2 py-1 rounded transition-colors flex items-center gap-1 mx-auto hover:bg-red-100">
-                                        <i class="fas fa-undo"></i> Hapus
+                                            class="text-red-500 hover:text-red-700 text-xs font-semibold border border-red-200 bg-red-50 px-2 py-1 rounded transition-colors flex items-center gap-1 mx-auto hover:bg-red-100">
+                                            <i class="fas fa-undo"></i> Hapus
                                     </button>
                                 <% } else { %>
                                     <span class="text-gray-400 text-xs flex items-center justify-center gap-1"><i class="fas fa-lock"></i> Terkunci</span>
@@ -122,10 +142,10 @@
                         </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr id="noDataRow"><td colspan="7" class="text-center py-12 text-gray-400">Belum ada stok buku di Puskel.</td></tr>
+                        <tr id="noDataRow"><td colspan="8" class="text-center py-12 text-gray-400">Belum ada stok buku di Puskel.</td></tr>
                     <% } %>
                     <tr id="searchNoResult" class="hidden">
-                        <td colspan="7" class="text-center py-12 text-gray-400">
+                        <td colspan="8" class="text-center py-12 text-gray-400">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-search text-4xl mb-2 text-gray-200"></i>
                                 <span>Data tidak ditemukan untuk kata kunci tersebut.</span>
@@ -150,18 +170,6 @@
         </div>
 
         <form id="formAddStock" action="/admin/puskel/add-stock" method="POST" class="space-y-4">
-            
-            <!-- <div class="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <label class="block text-xs font-bold text-blue-800 mb-1 uppercase">Scan ISBN (Auto Fill):</label>
-                <div class="relative">
-                    <input type="text" id="isbnScanner" class="w-full pl-8 p-2 border border-blue-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Scan barcode buku disini..." autofocus>
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                        <i class="fas fa-barcode text-blue-500"></i>
-                    </div>
-                    <span id="loadingScan" class="absolute inset-y-0 right-0 flex items-center pr-2 text-xs text-blue-600 hidden font-bold animate-pulse">Searching...</span>
-                </div>
-            </div> -->
-
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Judul Buku <span class="text-red-500">*</span></label>
                 <input type="text" name="title" id="inputTitle" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:bg-white transition-colors" placeholder="Masukkan judul buku...">
@@ -195,6 +203,50 @@
                 <button type="button" onclick="closeModal('modalAddStock')" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm flex items-center gap-2">
                     <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalEditStock" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-900 opacity-50 backdrop-blur-sm transition-opacity" onclick="closeModal('modalEditStock')"></div>
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg z-10 p-6 relative animate-fade-in-down">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">
+                <i class="fas fa-edit text-blue-600 mr-2"></i> Edit Data Buku
+            </h3>
+            <button onclick="closeModal('modalEditStock')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+
+        <form id="formEditStock" method="POST" class="space-y-4">
+            <input type="hidden" id="editBookId" name="id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Judul Buku <span class="text-red-500">*</span></label>
+                <input type="text" name="title" id="editTitle" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pengarang</label>
+                <input type="text" name="author" id="editAuthor" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Induk <span class="text-red-500">*</span></label>
+                    <input type="text" name="no_induk" id="editNoInduk" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Panggil</label>
+                    <input type="text" name="call_number" id="editCallNumber" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t mt-2">
+                <button type="button" onclick="closeModal('modalEditStock')" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium">Batal</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm flex items-center gap-2">
+                    <i class="fas fa-save"></i> Simpan Perubahan
                 </button>
             </div>
         </form>
@@ -308,7 +360,6 @@
     }
 
     // Panggil filter setiap kali input berubah (sudah ada onkeyup di HTML)
-    // Tapi kita perlu update nomor jika filter aktif
     document.getElementById('searchInput').addEventListener('keyup', updateRowNumbers);
     document.getElementById('sortSelect').addEventListener('change', updateRowNumbers);
 
@@ -319,22 +370,24 @@
     const authorInput = document.getElementById('inputAuthor');
     const loadingText = document.getElementById('loadingScan');
 
-    isbnInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault(); 
-            const isbn = this.value.trim();
-            if (isbn) fetchBookData(isbn);
-        }
-    });
+    if (isbnInput) {
+        isbnInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); 
+                const isbn = this.value.trim();
+                if (isbn) fetchBookData(isbn);
+            }
+        });
 
-    let typingTimer;
-    isbnInput.addEventListener('input', function () {
-        clearTimeout(typingTimer);
-        const isbn = this.value.trim();
-        if (isbn.length === 10 || isbn.length === 13) {
-            typingTimer = setTimeout(() => fetchBookData(isbn), 800);
-        }
-    });
+        let typingTimer;
+        isbnInput.addEventListener('input', function () {
+            clearTimeout(typingTimer);
+            const isbn = this.value.trim();
+            if (isbn.length === 10 || isbn.length === 13) {
+                typingTimer = setTimeout(() => fetchBookData(isbn), 800);
+            }
+        });
+    }
 
     async function fetchBookData(isbn) {
         loadingText.classList.remove('hidden');
@@ -365,9 +418,27 @@
     // --- MODAL CONTROL ---
     function openModal(id) { 
         document.getElementById(id).classList.remove('hidden'); 
-        if(id === 'modalAddStock') setTimeout(() => document.getElementById('isbnScanner').focus(), 100);
+        if(id === 'modalAddStock') {
+            const scanner = document.getElementById('isbnScanner');
+            if(scanner) setTimeout(() => scanner.focus(), 100);
+        }
     }
+    
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // --- [NEW] FUNGSI EDIT MODAL ---
+    function openEditModal(id, title, noInduk, callNumber, author) {
+        document.getElementById('editBookId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editAuthor').value = author;
+        document.getElementById('editNoInduk').value = noInduk;
+        document.getElementById('editCallNumber').value = callNumber;
+        
+        // Set action form secara dinamis ke route update
+        document.getElementById('formEditStock').action = `/admin/puskel/update-stock/${id}`;
+        
+        openModal('modalEditStock');
+    }
 
     // --- TAMPILAN FILE UPLOAD ---
     function updateFileName(input) {
@@ -434,13 +505,13 @@
 
     function confirmReturnStock(id, title) {
         Swal.fire({
-            title: 'Hapus Dari Puskel?',
-            text: `Kembalikan buku "${title}" ke Gudang Utama?`,
+            title: 'Hapus Buku?',
+            text: `Hapus buku "${title}" dari puskel?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, Kembalikan!',
+            confirmButtonText: 'Ya, Hapus!',
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -450,7 +521,7 @@
                 .then(res => {
                     if(res.ok || res.redirected) { 
                         Swal.fire({
-                            icon: 'success', title: 'Berhasil!', text: 'Buku dikembalikan ke Gudang Utama',
+                            icon: 'success', title: 'Berhasil!', text: 'Buku Berhasil dihapus dari puskel',
                             timer: 1500, showConfirmButton: false
                         }).then(() => window.location.reload());
                     } else { throw new Error('Gagal'); }

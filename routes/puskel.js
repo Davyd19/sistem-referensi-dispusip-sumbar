@@ -44,8 +44,13 @@ router.get('/institution/:id', puskelController.detailInstitution);
 // 3. MANAJEMEN STOK & SIRKULASI (LOGISTIK)
 // Muat buku dari Gudang Utama ke Mobil Puskel (Scan)
 router.post('/add-stock', puskelController.addStock);
+
+// [BARU] Update Stok Puskel (Edit No Induk / Call Number via Modal)
+router.post('/update-stock/:id', puskelController.updateStock);
+
 // Kembalikan buku dari Mobil Puskel ke Gudang Utama
 router.get('/remove-stock/:id', puskelController.removeStock);
+
 // Pinjamkan ke Lembaga
 router.post('/loan', puskelController.loanBook);
 // Terima Pengembalian dari Lembaga
@@ -56,7 +61,7 @@ router.post('/return', puskelController.returnBook);
 router.get('/add', puskelController.showAddPage);
 router.post('/add', uploadImage.single('image'), puskelController.addBook);
 
-// Edit Buku
+// Edit Buku (Halaman Full Edit)
 router.get('/edit/:id', puskelController.showEditPage);
 router.post('/edit/:id', uploadImage.single('image'), puskelController.updateBook);
 

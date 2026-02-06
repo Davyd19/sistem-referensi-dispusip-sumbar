@@ -12,6 +12,7 @@ const getSuperDashboard = async (req, res) => {
         // 3. Ambil Daftar Ruangan beserta Jumlah Buku di dalamnya
         // Menggunakan subquery untuk performa yang lebih baik daripada include all
         const roomsData = await Ruangan.findAll({
+            
             attributes: [
                 'id_ruangan',
                 'nama_ruangan',
