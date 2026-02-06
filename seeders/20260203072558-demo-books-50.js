@@ -105,7 +105,7 @@ module.exports = {
         call_number: data.call_number,
         language: 'Indonesia',
         category_id: category.id,
-        id_ruangan: 1, // Default Gudang Utama
+        id_ruangan: 3, // Default Gudang Utama
         stock_total: data.stock,
         image: null,
         createdAt: new Date(),

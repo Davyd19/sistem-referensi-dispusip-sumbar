@@ -38,7 +38,7 @@ module.exports = {
       shelf_location: Sequelize.STRING,
       category_id: { 
         type: Sequelize.INTEGER, 
-        allowNull: false 
+        allowNull: true 
       },
 
       image: { 

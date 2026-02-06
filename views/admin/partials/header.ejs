@@ -76,41 +76,41 @@
                 <% } else { %>
                     
                     <a href="/admin/dashboard" class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base 
-                        <%= safeActive === 'dashboard' || safeTitle === 'Dashboard Statistik' ? 'bg-blue-100 font-semibold' : '' %>">
+                        <%= safeActive === 'dashboard' || safeTitle === 'Dashboard Statistik' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         📊 Dashboard
                     </a>
                     
-                    <a href="/admin/books" class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'home' || safeTitle === 'Daftar Buku' ? 'bg-blue-100 font-semibold' : '' %>">
+                    <a href="/admin/books" class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'home' || safeTitle === 'Daftar Buku' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         📚 Daftar Buku
                     </a>
 
-                    <a href="/admin/books/add" class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'add' ? 'bg-blue-100 font-semibold' : '' %>">
+                    <a href="/admin/books/add" class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'add' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         ➕ Tambah Buku
                     </a>
 
                     <a href="/admin/categories"
                         class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base
-                        <%= safeActive === 'categories' || safeTitle === 'Kelola Kategori' ? 'bg-blue-100 font-semibold' : '' %>">
-                        📂 Daftar Kategori
+                        <%= safeActive === 'categories' || safeTitle === 'Kelola Kategori' || safeTitle === 'Daftar Kategori' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
+                        📂 Kategori
                     </a>
 
                     <a href="/admin/subjects"
-                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'subject' || safeTitle === 'Kelola Subjek' ? 'bg-blue-100 font-semibold' : '' %>">
+                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'subject' || safeTitle === 'Kelola Subjek' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         🏷️ Subjek
                     </a>
 
                     <a href="/admin/authors"
-                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'authors' || safeTitle === 'Kelola Penulis' ? 'bg-blue-100 font-semibold' : '' %>">
+                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'authors' || safeTitle === 'Kelola Penulis' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         ✍️ Penulis
                     </a>
 
                     <a href="/admin/publishers"
-                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'publishers' || safeTitle === 'Kelola Penerbit' ? 'bg-blue-100 font-semibold' : '' %>">
+                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'publishers' || safeTitle === 'Kelola Penerbit' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         🏢 Penerbit
                     </a>
                     
                     <a href="/admin/shelf-management"
-                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'shelf-management' ? 'bg-blue-100 font-semibold' : '' %>">
+                        class="block px-4 sm:px-6 py-2 sm:py-3 hover:bg-blue-50 text-sm sm:text-base <%= safeActive === 'shelf-management' ? 'bg-blue-100 font-semibold text-blue-700' : '' %>">
                         📍 Manajemen Rak
                         </a>
 

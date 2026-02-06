@@ -147,11 +147,12 @@
             <div>
                 <label class="font-medium">Penerbit<span class="text-red-500">*</span></label>
                 <select name="publishers" id="publisher-select" class="w-full p-2 border rounded" required>
-                    <% publishers.forEach(p=> { %>
-                        <option value="<%= p.id %>" <%=book.Publishers.some(bp=> bp.id === p.id) ? 'selected' : '' %>>
+                    <option value=""></option> <% publishers.forEach(p => { %>
+                        <option value="<%= p.id %>" 
+                            <%= (book.Publishers && book.Publishers.length > 0 && book.Publishers.some(bp => bp.id === p.id)) ? 'selected' : '' %>>
                             <%= p.name %>
                         </option>
-                        <% }) %>
+                    <% }) %>
                 </select>
             </div>
         </div>
@@ -161,11 +162,12 @@
             <div>
                 <label class="font-medium">Kategori <span class="text-red-500">*</span></label>
                 <select name="category_id" id="category-select" class="w-full p-2 border rounded" required>
-                    <% categories.forEach(c=> { %>
-                        <option value="<%= c.id %>" <%=book.Category?.id===c.id ? 'selected' : '' %>>
+                    <option value=""></option> <% categories.forEach(c => { %>
+                        <option value="<%= c.id %>" 
+                            <%= (book.Category && book.Category.id === c.id) ? 'selected' : '' %>>
                             <%= c.name %>
                         </option>
-                        <% }) %>
+                    <% }) %>
                 </select>
             </div>
 

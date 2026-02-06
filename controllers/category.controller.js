@@ -100,16 +100,19 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        // Cek dulu apakah kategori masih punya buku secara global
-        const bookCount = await Book.count({ where: { category_id: id } });
-        
-        if (bookCount > 0) {
-            return res.status(400).send('Gagal: Kategori masih digunakan oleh buku lain.');
-        }
 
+        // 1. Update semua buku yang menggunakan kategori ini agar category_id menjadi null
+        await Book.update(
+            { category_id: null }, 
+            { where: { category_id: id } }
+        );
+
+        // 2. Baru hapus kategorinya
         await Category.destroy({ where: { id } });
+
         res.redirect('/admin/categories');
     } catch (error) {
+        console.error("DELETE CATEGORY ERROR:", error);
         res.status(500).send('Gagal menghapus kategori');
     }
 };
