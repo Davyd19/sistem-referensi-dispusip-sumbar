@@ -148,8 +148,8 @@
                 <input type="hidden" name="layout_json" id="layoutJsonInput" value="">
 
                 <div class="px-6 pb-6">
-                    <div id="denahViewport" class="denah-viewport rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 max-w-full overflow-hidden min-h-[400px] flex justify-center items-center">
-                        <div id="gridContainer" class="select-none inline-block origin-center"></div>
+                    <div id="denahViewport" class="denah-viewport rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 max-w-full overflow-x-auto overflow-y-hidden">
+                        <div id="gridContainer" class="select-none inline-block"></div>
                     </div>
                     <p id="layoutStatus" class="text-xs text-gray-500 mt-2"></p>
                 </div>
@@ -485,7 +485,7 @@
     const wrapper = document.getElementById('denahViewport');
     if (!wrapper || !gridEl) return null;
     const br = gridEl.getBoundingClientRect();
-    const step = (lastCellSize + GAP) * lastScale;
+    const step = lastCellSize + GAP;
     const c = Math.floor((clientX - br.left + 3) / step) + 1;
     const r = Math.floor((clientY - br.top + 3) / step) + 1;
     if (r < 1 || r > state.rows || c < 1 || c > state.cols) return null;
@@ -531,35 +531,18 @@
   const denahViewport = document.getElementById('denahViewport');
   const GAP = 6;
   const PAD = 16;
-  let lastCellSize = 26;
-  let lastScale = 1;
+  let lastCellSize = 20;
 
+  const PAD_EXTRA = 4;
   function fitGridToViewport() {
-    if (!denahViewport) return 26;
-    const cols = state.cols;
-    const rows = state.rows;
-    let pw = denahViewport.clientWidth - PAD * 2;
-    let ph = denahViewport.clientHeight - PAD * 2;
-    if (pw <= 0 || ph <= 0 || pw < 400) {
-      pw = Math.max(800, (window.innerWidth || 1200) - 120);
-      ph = Math.max(450, (window.innerHeight || 800) * 0.55);
-    }
-    const availW = pw - (cols - 1) * GAP;
-    const availH = ph - (rows - 1) * GAP;
-    const minCell = 18;
-    const fitSize = Math.min(Math.floor(availW / cols), Math.floor(availH / rows));
-    const size = Math.max(minCell, Math.min(32, fitSize));
-    const totalW = cols * size + (cols - 1) * GAP;
-    const totalH = rows * size + (rows - 1) * GAP;
-    let scale = 1;
-    if (totalW > pw || totalH > ph) {
-      scale = Math.min(pw / totalW, ph / totalH);
-    }
-    gridEl.style.transform = 'scale(' + scale + ')';
-    gridEl.style.transformOrigin = 'center center';
-    lastCellSize = size;
-    lastScale = scale;
-    return size;
+    if (!denahViewport) return 20;
+    var pw = denahViewport.clientWidth || (window.innerWidth - 120);
+    if (pw < 300) pw = 800;
+    var availW = pw - PAD * 2 - PAD_EXTRA * 2 - (40 - 1) * GAP;
+    var cellSize = Math.floor(availW / 40);
+    cellSize = Math.max(14, Math.min(28, cellSize));
+    lastCellSize = cellSize;
+    return cellSize;
   }
 
   const render = () => {
@@ -568,9 +551,13 @@
     gridEl.style.setProperty('--rd-cell-size', cellSize + 'px');
     gridEl.style.gridTemplateColumns = `repeat(${state.cols}, ${cellSize}px)`;
     gridEl.style.gridTemplateRows = `repeat(${state.rows}, ${cellSize}px)`;
+    gridEl.style.transform = '';
     if (denahViewport) {
-      denahViewport.style.overflowX = 'hidden';
+      denahViewport.style.overflowX = state.cols > 40 ? 'auto' : 'hidden';
       denahViewport.style.overflowY = 'hidden';
+      denahViewport.style.padding = PAD + 'px ' + (PAD + PAD_EXTRA) + 'px ' + (PAD + PAD_EXTRA) + 'px ' + PAD + 'px';
+      var contentH = state.rows * cellSize + (state.rows - 1) * GAP + PAD + (PAD + PAD_EXTRA);
+      denahViewport.style.height = contentH + 'px';
     }
 
     const occupied = getOccupiedRects().filter(it => it.id !== movingItemId);
