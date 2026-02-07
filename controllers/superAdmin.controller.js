@@ -1,10 +1,12 @@
 'use strict';
-const { Book, User, Ruangan, Sequelize } = require('../models');
+const { Book, User, Ruangan, BookCopy,Sequelize } = require('../models');
 
 const getSuperDashboard = async (req, res) => {
     try {
         // 1. Ambil Total Buku (Global)
-        const totalBooks = await Book.count();
+        const totalTitles = await Book.count();
+
+        const totalCopies = await BookCopy.count();
 
         // 2. Ambil Total Ruangan (Jumlahnya saja)
         const totalRuangan = await Ruangan.count();
@@ -20,7 +22,13 @@ const getSuperDashboard = async (req, res) => {
                     SELECT COUNT(*)
                     FROM Books AS b
                     WHERE b.id_ruangan = Ruangan.id_ruangan
-                )`), 'total_koleksi']
+                )`), 'total_judul'],
+                [Sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM BookCopies AS bc
+                    INNER JOIN Books AS b ON bc.book_id = b.id
+                    WHERE b.id_ruangan = Ruangan.id_ruangan
+                )`), 'total_eksemplar']
             ],
             order: [['nama_ruangan', 'ASC']]
         });
@@ -31,7 +39,8 @@ const getSuperDashboard = async (req, res) => {
             user: req.session.user ? req.session.user.username : 'Admin',
             role: req.session.user ? req.session.user.role : 'super_admin',
             stats: {
-                totalBooks,
+                totalTitles,
+                totalCopies,
                 totalRuangan,
                 roomsData // Data array ruangan + jumlah buku
             }

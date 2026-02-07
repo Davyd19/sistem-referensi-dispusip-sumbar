@@ -13,14 +13,14 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Total Koleksi Buku</p>
-                <h2 class="text-4xl font-extrabold text-gray-800"><%= stats.totalBooks %></h2>
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Total Judul Buku</p>
+                <h2 class="text-4xl font-extrabold text-gray-800"><%= stats.totalTitles %></h2>
                 <p class="text-xs text-gray-400 mt-2">
-                    Total akumulasi seluruh ruangan
+                    Total akumulasi judul buku di seluruh ruangan
                 </p>
             </div>
             <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl">
@@ -30,13 +30,24 @@
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
-                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Total Ruangan OPAC</p>
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Seluruh Koleksi</p>
+                <h2 class="text-4xl font-extrabold text-orange-600"><%= stats.totalCopies %></h2>
+                <p class="text-xs text-gray-400 mt-2">Total Seluruh Fisik Buku</p>
+            </div>
+            <div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center text-2xl">
+                <i class="fas fa-copy"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Ruangan</p>
                 <h2 class="text-4xl font-extrabold text-gray-800"><%= stats.totalRuangan %></h2>
-                <a href="/admin/rooms" class="text-sm text-purple-600 hover:text-purple-700 font-medium mt-2 inline-block">
+                <a href="/admin/rooms" class="text-xs text-purple-600 hover:underline mt-2 inline-block font-semibold">
                     Kelola Ruangan <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
-            <div class="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl">
+            <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-2xl">
                 <i class="fas fa-door-open"></i>
             </div>
         </div>
@@ -71,16 +82,19 @@
                                 </h4>
                             </div>
                             
-                            <div class="flex items-end justify-between border-t border-gray-100 pt-4">
+                            <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
                                 <div>
-                                    <p class="text-xs text-gray-500 uppercase font-semibold">Jumlah Koleksi</p>
-                                    <p class="text-2xl font-bold text-blue-700">
-                                        <%= room.getDataValue('total_koleksi') %> <span class="text-sm font-normal text-gray-500">Buku</span>
+                                    <p class="text-[10px] text-gray-500 uppercase font-bold">Total Judul</p>
+                                    <p class="text-xl font-bold text-blue-700">
+                                        <%= room.getDataValue('total_judul') %>
                                     </p>
                                 </div>
-                                <a href="/admin/rooms/edit/<%= room.id_ruangan %>" class="text-gray-400 hover:text-orange-500 transition" title="Edit Ruangan">
-                                    <i class="fas fa-cog"></i>
-                                </a>
+                                <div>
+                                    <p class="text-[10px] text-gray-500 uppercase font-bold">Total Koleksi</p>
+                                    <p class="text-xl font-bold text-orange-600">
+                                        <%= room.getDataValue('total_eksemplar') %>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
